@@ -83,14 +83,14 @@
                     </p:selectOneMenu>
 
                     <p:commandButton icon="pi pi-search" styleClass="ui-button-success" actionListener="#{Main.rellenarTabla}" update="mainForm"
-                                     oncomplete="PF('dtProducts').clearFilters(); cambiarToggler()"/>
+                                     oncomplete="PF('dtProducts').clearFilters(); cambiarToggler();"/>
                 </p:toolbarGroup>
 
             </p:toolbar>
 
-            <p:remoteCommand name="changeTab" action="#{Main.handleTabChange}" update=":mainForm" />
+            <p:tabView id="tabView" widgetVar="tabView" dynamic="true" activeIndex="#{Main.activeIndex}">
 
-            <p:tabView id="tabView" widgetVar="tabView" onTabChange="changeTab(event.index)">
+                <p:ajax event="tabChange" listener="#{Main.onChange()}" update=":mainForm:tabView:dtProducts"/>
 
                 <p:tab title="General">
 
@@ -270,6 +270,10 @@
 
                     <p:lineChart id="chart" widgetVar="chart" model="#{Main.lineModel}" style="width: 100%; height: 500px;" rendered="#{Main.productosData.size() > 0}"/>
 
+                    <p:donutChart id="donutChart" widgetVar="donutChart" model="#{Main.donutModel}" style="width: 100%; height: 500px; margin-top: 50px;" rendered="#{Main.productosData.size() > 0}"/>
+
+                    <p:barChart id="barChart" widgetVar="barChart" model="#{Main.barModel}" style="width: 100%; height: 500px; margin-top: 50px;" rendered="#{Main.productosData.size() > 0}"/>
+
                 </p:tab>
 
             </p:tabView>
@@ -373,6 +377,14 @@
                 }
             };
 
+            function ajustarTamañoDelGrafico() {
+
+                var donutChart = document.getElementById('mainForm:tabView:donutChart_canvas');
+
+                donutChart.style.width = '40px !important';
+                donutChart.style.height = '30px !important';
+            }
+
             function guardarPosicion() {
 
                 let recordatorios = document.getElementById('drag');
@@ -396,11 +408,6 @@
                         rowToggler.click();
                     }
                 });
-            }
-
-            function cambioDeTab() {
-                var activeIndex = PF('tabView').getActiveIndex();
-                changeTab(activeIndex);
             }
 
         </script>
