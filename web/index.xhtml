@@ -1,0 +1,409 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+
+    <h:head>
+        <title>Productos</title>
+        <style>
+            .no-stock {
+                background-color: #ff0038 !important;
+                color: #ffffff !important;
+            }
+            .caro {
+                background-color: #116D07 !important;
+                color: #ffffff !important;
+            }
+            .align-right input {
+                text-align: right;
+            }
+        </style>
+    </h:head>
+
+    <h:body>
+
+        <!-- Growl -->
+
+        <p:growl id="growl" showDetail="true" />
+
+        <!-- Formulario principal -->
+
+        <h:form id="mainForm">
+
+            <p:toolbar>
+                <p:toolbarGroup>
+
+                    <p:commandButton icon="pi pi-plus" styleClass="ui-button-success" style="margin-right: .5rem"
+                                     actionListener="#{Main.openNew()}" update=":dialogs:manage-product-content"
+                                     oncomplete="PF('manageProductDialog').show()">
+                    </p:commandButton>
+
+                    <p:commandButton id="delete-products-button" widgetVar="delete-products-button" value="#{Main.deleteButtonMessage}"
+                                     icon="pi pi-trash" actionListener="#{Main.eliminarSelectedProductos()}"
+                                     styleClass="ui-button-danger" rendered="#{Main.selectedProductos ne null and Main.selectedProductos.size() gt 0}"
+                                     update="mainForm" style="margin-right: .5rem">
+                        <p:confirm header="Confirmación" message="¿Deseas borrar los productos seleccionados?"
+                                   icon="pi pi-exclamation-triangle"/>
+                    </p:commandButton>
+
+
+                    <p:commandButton value="XLSX (PrimeFaces)" style="margin-right: .1rem" rendered="#{Main.productosData.size() > 0}">
+                        <p:dataExporter type="xlsx" target="dtProducts" fileName="productos"/>
+                    </p:commandButton>
+
+                    <p:commandButton id="export-xlsx-button" widgetVar="export-xlsx-button" style="margin-right: .1rem" value="XLSX (Sin PrimeFaces)"
+                                     actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true" rendered="#{Main.productosData.size() > 0}">
+                    </p:commandButton>
+
+                    <p:commandButton value="PDF (PrimeFaces)" rendered="#{Main.productosData.size() > 0}">
+                        <p:dataExporter type="pdf" target="dtProducts" fileName="productos"/>
+                    </p:commandButton>
+
+                </p:toolbarGroup>
+
+                <p:toolbarGroup align="right">
+                    <p:outputLabel for="searchFecha1" style="margin-right: .5rem">Desde</p:outputLabel>
+                    <p:datePicker id="searchFecha1" value="#{Main.rangoInicio}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem"
+                                  maxdate="#{Main.rangoFin != null ? Main.rangoFin : Main.today}" pattern="dd/MM/yyyy">
+                        <p:ajax event="change" update="mainForm" />
+                    </p:datePicker>
+
+                    <p:outputLabel for="searchFecha2" style="margin-right: .5rem">Hasta</p:outputLabel>
+                    <p:datePicker id="searchFecha2" value="#{Main.rangoFin}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem"
+                                  mindate="#{Main.rangoInicio != null ? Main.rangoInicio : null}" maxdate="#{Main.today}" pattern="dd/MM/yyyy">
+                        <p:ajax event="change" update="mainForm" />
+                    </p:datePicker>
+
+                    <p:outputLabel for="searchCategoria" style="margin-right: .5rem">Categoría</p:outputLabel>
+                    <p:selectOneMenu id="searchCategoria" styleClass="ui-custom-filter" style="margin-right: .5rem" value="#{Main.idSelectedCategoria}">
+                        <f:selectItem itemLabel="Todo" itemValue="-1"/>
+                        <f:selectItems value="#{Main.categorias}" var="var" itemValue="#{var.id}" itemLabel="#{var.nombre}" />
+
+                        <p:ajax event="change" update="mainForm" />
+                    </p:selectOneMenu>
+
+                    <p:commandButton icon="pi pi-search" styleClass="ui-button-success" actionListener="#{Main.rellenarTabla}" update="mainForm"
+                                     oncomplete="PF('dtProducts').clearFilters(); cambiarToggler()"/>
+                </p:toolbarGroup>
+
+            </p:toolbar>
+
+            <p:remoteCommand name="changeTab" action="#{Main.handleTabChange}" update=":mainForm" />
+
+            <p:tabView id="tabView" widgetVar="tabView" onTabChange="changeTab(event.index)">
+
+                <p:tab title="General">
+
+                    <!-- Tabla de productos -->
+
+                    <p:remoteCommand name="updateChart" action="#{Main.createLineModel()}" update="mainForm"/>
+
+                    <p:dataTable var="producto" id="dtProducts" widgetVar="dtProducts" value="#{Main.productosData}" rowKey="#{producto.codigo}"
+                                 selection="#{Main.selectedProducto}" selectionMode="single" rowStyleClass="#{producto.stock ? (producto.precio > 100.0 ? 'caro' : null) : 'no-stock'}"
+                                 filteredValue="#{Main.filtroProductos}" draggableRows="true">
+
+                        <!-- Eventos AJAX -->
+
+                        <p:ajax event="rowReorder" listener="#{Main.onRowReorder}" update="mainForm growl"/>
+                        <p:ajax event="rowSelectCheckbox" update="mainForm"/>
+                        <p:ajax event="rowUnselectCheckbox" update="mainForm"/>
+                        <p:ajax event="toggleSelect" update="mainForm"/>
+                        <p:ajax event="rowSelect" listener="#{Main.gestionTablaLugares()}" update="mainForm growl" />
+                        <p:ajax event="filter" oncomplete="updateChart()"/>
+                        <p:ajax event="rowToggle" oncomplete="PF('dtLugaresExp').clearFilters();"/>
+
+                        <p:column headerText="Posición" sortBy="#{producto.posicion}" width="40px">
+                            <h:outputText value="#{producto.posicion + 1}" />
+                        </p:column>
+
+                        <p:column style="text-align: center" width="88px" exportable="false">
+
+                            <p:commandButton icon="pi pi-pencil" update=":dialogs:manage-product-content"
+                                             oncomplete="PF('manageProductDialog').show()" actionListener="#{Main.editProduct(producto, false, false)}"
+                                             styleClass="edit-button rounded-button ui-button-success" style="margin-right: 5px">
+                                <p:resetInput target=":dialogs:manage-product-content" />
+                            </p:commandButton>
+
+                            <p:commandButton class="ui-button-warning rounded-button" icon="pi pi-trash" actionListener="#{Main.eliminarProducto(producto)}"
+                                             update="mainForm" style="margin-right: 5px">
+                                <p:confirm header="Confirmación" message="¿Deseas borrar el producto seleccionado?" icon="pi pi-exclamation-triangle"/>
+                            </p:commandButton>
+
+                        </p:column>
+
+                        <p:column style="width:2rem">
+                            <p:rowToggler rendered="#{producto.stock}"/>
+                        </p:column>
+
+                        <p:column headerText="Código" style="text-align: right" width="78px" sortBy="#{producto.codigo}">
+                            <p:commandLink id="codigo" update=":dialogs:manage-product-content" action="#{Main.editProduct(producto, true, false)}" class="mr-4"
+                                           value="#{producto.codigo}" onclick="PF('manageProductDialog').show()"/>
+                        </p:column>
+
+                        <p:column headerText="Nombre" sortBy="#{producto.nombre}" width="200px" filterBy="#{producto.nombre}"
+                                  filterMatchMode="contains">
+                            <h:outputText value="#{producto.nombre}" />
+                        </p:column>
+
+                        <p:column headerText="Descripción" sortBy="#{producto.descripcion}" width="600px" filterBy="#{producto.descripcion}"
+                                  filterMatchMode="contains">
+                            <h:outputText value="#{producto.descripcion}" />
+                        </p:column>
+
+                        <p:column headerText="Categoría" sortBy="#{producto.categoria.nombre}" width="90px"
+                                  filterMatchMode="exact">
+                            <h:outputText value="#{producto.categoria.nombre}" />
+                        </p:column>
+
+                        <p:column headerText="Precio" style="text-align: right" sortBy="#{producto.precio}" width="71px">
+                            <h:outputText value="#{producto.precio}">
+                                <f:convertNumber type="currency" currencySymbol="€" pattern="#,##0.00¤" locale="es" />
+                            </h:outputText>
+                        </p:column>
+
+                        <p:column headerText="Fecha de lanzamiento" sortBy="#{producto.fechaLanz}"
+                                  width="160px" filterBy="#{Main.formatDate(producto.fechaLanz)}">
+
+                            <f:facet name="filter">
+                                <p:datePicker selectionMode="single" onchange="PF('dtProducts').filter()" />
+                            </f:facet>
+
+                            <h:outputText value="#{Main.formatDate(producto.fechaLanz)}" />
+
+                        </p:column>
+
+                        <p:column headerText="Stock" style="text-align: center" width="50px" exportValue="#{Main.exportStock(producto.stock)}">
+                            <p:selectBooleanCheckbox value="#{producto.stock}" disabled="true"/>
+                        </p:column>
+
+                        <p:rowExpansion>
+                            <p:dataTable var="lugar" id="dtLugaresExp" widgetVar="dtLugaresExp" value="#{producto.lugares}" filteredValue="#{Main.filtroLugares2}">
+
+                                <p:column headerText="Código" style="text-align: right" width="78px" sortBy="#{lugar.id}">
+                                    <h:outputText value="#{lugar.id}" />
+                                </p:column>
+
+                                <p:column headerText="Ciudad" sortBy="#{lugar.ciudad}" width="200px" filterBy="#{lugar.ciudad}"
+                                          filterMatchMode="contains">
+                                    <h:outputText value="#{lugar.ciudad}" />
+                                </p:column>
+
+                                <p:column headerText="País" sortBy="#{lugar.pais}" width="200px" filterBy="#{lugar.pais}"
+                                          filterMatchMode="contains">
+                                    <h:outputText value="#{lugar.pais}" />
+                                </p:column>
+
+                            </p:dataTable>
+                        </p:rowExpansion>
+
+                    </p:dataTable>
+
+                    <!-- Tabla de lugares -->
+                    <h:panelGroup id="tblLugar"> 
+                        <p:dataTable var="lugar" id="dtLugares" widgetVar="dtLugares" value="#{Main.lugaresSelected}"
+                                     rendered="#{Main.selectedProducto ne null and Main.selectedProducto.stock}" filteredValue="#{Main.filtroLugares}">
+
+                            <p:column headerText="Código" style="text-align: right" width="78px" sortBy="#{lugar.id}">
+                                <h:outputText value="#{lugar.id}" />
+                            </p:column>
+
+                            <p:column headerText="Ciudad" sortBy="#{lugar.ciudad}" width="200px" filterBy="#{lugar.ciudad}"
+                                      filterMatchMode="contains">
+                                <h:outputText value="#{lugar.ciudad}" />
+                            </p:column>
+
+                            <p:column headerText="País" sortBy="#{lugar.pais}" width="200px" filterBy="#{lugar.pais}"
+                                      filterMatchMode="contains">
+                                <h:outputText value="#{lugar.pais}" />
+                            </p:column>
+
+                        </p:dataTable>
+                    </h:panelGroup>
+
+                    <!-- Lazy Table -->
+
+                    <p:dataTable var="productoLazy" value="#{Main.lazyModel}" lazy="true" id="lazyTable" virtualScroll="true" scrollRows="20"
+                                 scrollHeight="500" scrollable="true">
+
+                        <p:column headerText="Código" style="text-align: right" width="78px" sortBy="#{productoLazy.codigo}">
+                            <h:outputText value="#{productoLazy.codigo}" />
+                        </p:column>
+
+                        <p:column headerText="Nombre" sortBy="#{productoLazy.nombre}" width="200px" filterBy="#{productoLazy.nombre}">
+                            <h:outputText value="#{productoLazy.nombre}"/>
+                        </p:column>
+
+                        <p:column headerText="Descripción" sortBy="#{productoLazy.descripcion}" width="600px" filterBy="#{productoLazy.descripcion}">
+                            <h:outputText value="#{productoLazy.descripcion}"/>
+                        </p:column>
+
+                        <p:column headerText="Categoría" sortBy="#{productoLazy.categoria.nombre}" width="90px" filterMatchMode="exact">
+                            <h:outputText value="#{productoLazy.categoria.nombre}" />
+                        </p:column>
+
+                        <p:column headerText="Precio" style="text-align: right" sortBy="#{productoLazy.precio}" width="71px">
+                            <h:outputText value="#{productoLazy.precio}">
+                                <f:convertNumber type="currency" currencySymbol="€" pattern="#,##0.00¤" locale="es" />
+                            </h:outputText>
+                        </p:column>
+
+                        <p:column headerText="Fecha de lanzamiento" sortBy="#{productoLazy.fechaLanz}" width="145px" filterBy="#{Main.formatDate(productoLazy.fechaLanz)}">
+
+                            <f:facet name="filter">
+                                <p:datePicker selectionMode="single" onchange="PF('dtProducts').filter()" />
+                            </f:facet>
+
+                            <h:outputText value="#{Main.formatDate(productoLazy.fechaLanz)}" />
+                        </p:column>
+
+                        <p:column headerText="Stock" style="text-align: center" width="50px" exportValue="#{Main.exportStock(productoLazy.stock)}">
+                            <p:selectBooleanCheckbox value="#{productoLazy.stock}" disabled="true"/>
+                        </p:column>
+
+                    </p:dataTable>
+
+                </p:tab>
+
+                <p:tab title="Charts">
+
+                    <!-- Bar Charts -->
+
+                    <p:lineChart id="chart" widgetVar="chart" model="#{Main.lineModel}" style="width: 100%; height: 500px;" rendered="#{Main.productosData.size() > 0}"/>
+
+                </p:tab>
+
+            </p:tabView>
+
+        </h:form>
+
+        <!-- Form de diálogos -->
+
+        <h:form id="dialogs">
+
+            <!-- Diálogo de creación/edición de producto -->
+
+            <p:dialog header="Detalle del producto" showEffect="fade" modal="true" widgetVar="manageProductDialog" responsive="true">
+
+                <p:outputPanel id="manage-product-content" class="ui-fluid">
+
+                    <div class="field">
+                        <p:outputLabel for="codigo">Código</p:outputLabel>
+                        <p:inputNumber id="codigo" value="#{Main.selectedProducto.codigo}" readonly="#{Main.selectedProducto.codigo!=0 || Main.show}"
+                                       styleClass="align-right" emptyValue="0" />
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="nombre">Nombre</p:outputLabel>
+                        <p:inputText id="nombre" value="#{Main.selectedProducto.nombre}" readonly="#{Main.show}" />
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="descripcion">Descripción</p:outputLabel>
+                        <p:inputTextarea id="descripcion" value="#{Main.selectedProducto.descripcion}" readonly="#{Main.show}" />
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="categoria">Categoría</p:outputLabel>
+                        <p:selectOneMenu id="categoria" value="#{Main.idSelectedCategoria}" styleClass="ui-custom-filter" disabled="#{Main.show}">
+                            <f:selectItem itemLabel="Gama alta" itemValue="1"/>
+                            <f:selectItem itemLabel="Gama media" itemValue="2"/>
+                            <f:selectItem itemLabel="Gama baja" itemValue="3"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="precio" style="text-align: end;">Precio</p:outputLabel>
+                        <p:inputNumber id="precio" value="#{Main.selectedProducto.precio}" emptyValue="0" symbol="€" symbolPosition="s" decimalSeparator=","
+                                       thousandSeparator="." styleClass="align-right" readonly="#{Main.show}"/>
+                    </div>
+
+                    <div class="field">
+                        <p:outputLabel for="fecha">Fecha de lanzamiento</p:outputLabel>
+                        <p:datePicker id="fecha" value="#{Main.selectedProducto.fechaLanz}" monthNavigator="true" yearNavigator="true" disabled="#{Main.show}"
+                                      mindate="#{Main.nuevo ? Main.minDate : null}" pattern="dd/MM/yyyy" readonly="#{Main.show}"/>
+                    </div>
+
+                    <div class="field" style="margin-top: 10px">
+                        <p:selectBooleanCheckbox id="stock" value="#{Main.selectedProducto.stock}" itemLabel="Stock" disabled="#{Main.show}"/>
+                    </div>
+
+                    <div class="field" style="margin-top: 10px">
+                        <p:commandButton value="Guardar" icon="pi pi-check" actionListener="#{Main.saveProduct}" rendered="#{!Main.show}"
+                                         update="mainForm growl" process="manage-product-content" />
+                        <p:commandButton value="Salir" icon="pi pi-times" onclick="PF('manageProductDialog').hide()"
+                                         class="ui-button-secondary" type="button" style="margin-top: 5px"/>
+                    </div>
+                </p:outputPanel>
+            </p:dialog>
+
+            <!-- Confirm Dialog -->
+
+            <p:confirmDialog widgetVar="deleteProductDialog" showEffect="fade" width="300" global="true" responsive="true">
+                <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
+                <p:commandButton value="Yes" type="button" styleClass="ui-confirmdialog-yes" />
+            </p:confirmDialog>
+
+        </h:form>
+
+        <!-- Item draggable -->
+
+        <p:panel id="drag" header="RECORDATORIOS" style="width: fit-content;">
+            <h:outputText value="Recordatorio número 1."/>
+        </p:panel>
+        <p:draggable for="drag" onStop="guardarPosicion()"/>
+
+        <script>
+
+            window.onload = function () {
+
+                let recordatorios = document.getElementById('drag');
+
+                if (localStorage.getItem('posTop') !== null) {
+                    let posTop = localStorage.getItem('posTop');
+                    posTop.startsWith("-") ? posTop = "0px" : posTop;
+                    let posLeft = localStorage.getItem('posLeft');
+                    posLeft.startsWith("-") ? posLeft = "0px" : posLeft;
+                    let posRight = localStorage.getItem('posRight');
+                    posRight.startsWith("-") ? posRight = "0px" : posRight;
+
+                    recordatorios.style.position = 'absolute';
+                    recordatorios.style.top = posTop;
+                    recordatorios.style.left = posLeft;
+                    recordatorios.style.right = posRight;
+                }
+            };
+
+            function guardarPosicion() {
+
+                let recordatorios = document.getElementById('drag');
+
+                let posTop = recordatorios.style.top;
+                posTop.startsWith("-") ? recordatorios.style.top = "0px" : posTop;
+                let posLeft = recordatorios.style.left;
+                posLeft.startsWith("-") ? recordatorios.style.left = "0px" : posLeft;
+                let posRight = recordatorios.style.right;
+                posRight.startsWith("-") ? recordatorios.style.right = "0px" : posRight;
+
+                localStorage.setItem('posTop', posTop);
+                localStorage.setItem('posLeft', posLeft);
+                localStorage.setItem('posRight', posRight);
+            }
+
+            function cambiarToggler() {
+                jQuery('.ui-row-toggler').each(function () {
+                    var rowToggler = jQuery(this);
+                    if (rowToggler.hasClass('ui-icon-circle-triangle-s')) {
+                        rowToggler.click();
+                    }
+                });
+            }
+
+            function cambioDeTab() {
+                var activeIndex = PF('tabView').getActiveIndex();
+                changeTab(activeIndex);
+            }
+
+        </script>
+
+    </h:body>
+</html>
