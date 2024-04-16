@@ -5,11 +5,13 @@ import com.inerttia.clases.Lugar;
 import com.inerttia.clases.Producto;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -21,10 +23,13 @@ import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.primefaces.PrimeFaces;
+import org.primefaces.event.FileUploadEvent;
 import org.primefaces.event.ReorderEvent;
 import org.primefaces.event.SelectEvent;
 import org.primefaces.model.charts.ChartData;
@@ -42,6 +47,7 @@ import org.primefaces.model.charts.line.LineChartOptions;
 import org.primefaces.model.charts.optionconfig.legend.Legend;
 import org.primefaces.model.charts.optionconfig.legend.LegendLabel;
 import org.primefaces.model.charts.optionconfig.title.Title;
+import org.primefaces.model.file.UploadedFile;
 
 /**
  *
@@ -66,6 +72,8 @@ public class Main {
     private List<Lugar> lugaresSelected2;
 
     private List<Producto> productosData;
+
+    private List<Producto> chartProductosData;
 
     private List<Producto> filtroProductos;
 
@@ -109,6 +117,9 @@ public class Main {
 
     private int activeIndex;
 
+    private UploadedFile archivoSubido;
+    private int anteriorCategoria;
+
     // INIT
     //
     @PostConstruct
@@ -122,6 +133,7 @@ public class Main {
         lugares = new ArrayList<>();
         lugaresSelected = new ArrayList<>();
         productosData = new ArrayList<>();
+        chartProductosData = new ArrayList<>();
         minDate = new Date();
         today = new Date();
         selected = -1;
@@ -251,6 +263,14 @@ public class Main {
 
     public void setProductosData(List<Producto> productosData) {
         this.productosData = productosData;
+    }
+
+    public List<Producto> getChartProductosData() {
+        return chartProductosData;
+    }
+
+    public void setChartProductosData(List<Producto> chartProductosData) {
+        this.chartProductosData = chartProductosData;
     }
 
     public List<Producto> getFiltroProductos() {
@@ -469,6 +489,14 @@ public class Main {
         this.activeIndex = activeIndex;
     }
 
+    public UploadedFile getArchivoSubido() {
+        return archivoSubido;
+    }
+
+    public void setArchivoSubido(UploadedFile archivoSubido) {
+        this.archivoSubido = archivoSubido;
+    }
+
     // ===============================================================================
     // MÉTODOS DEL BEAN
     //
@@ -483,47 +511,89 @@ public class Main {
 
     public void rellenarTabla() {
 
+        if (this.activeIndex == 0) {
+            PrimeFaces.current().executeScript("PF('dtProducts').clearFilters()");
+            PrimeFaces.current().executeScript("PF('dtLugares').clearFilters()");
+        }
+
         this.productosData = new ArrayList<>();
         this.filtroProductos = new ArrayList<>();
+        this.chartProductosData = new ArrayList<>();
 
         if (this.idSelectedCategoria != -1) {
             for (Producto prod : productos) {
                 if (prod.getCategoria().getId() == this.idSelectedCategoria) {
-                    this.productosData.add(prod);
-                    this.filtroProductos.add(prod);
+                    if (this.activeIndex == 0) {
+                        this.productosData.add(prod);
+                        this.filtroProductos.add(prod);
+                    } else {
+                        this.chartProductosData.add(prod);
+                    }
                 }
             }
         } else {
             for (Producto prod : productos) {
-                this.productosData.add(prod);
-                this.filtroProductos.add(prod);
+                if (this.activeIndex == 0) {
+                    this.productosData.add(prod);
+                    this.filtroProductos.add(prod);
+                } else {
+                    this.chartProductosData.add(prod);
+                }
             }
         }
 
         if (this.rangoInicio != null && this.rangoFin != null) {
-            this.productosData = this.productosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
-                    || producto.getFechaLanz().equals(this.rangoFin)
-                    || (producto.getFechaLanz().after(this.rangoInicio) && producto.getFechaLanz().before(this.rangoFin)))
-                    .collect(Collectors.toList());
+            if (this.activeIndex == 0) {
+                this.productosData = this.productosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                        || producto.getFechaLanz().equals(this.rangoFin)
+                        || (producto.getFechaLanz().after(this.rangoInicio) && producto.getFechaLanz().before(this.rangoFin)))
+                        .collect(Collectors.toList());
+            } else {
+                this.chartProductosData = this.chartProductosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                        || producto.getFechaLanz().equals(this.rangoFin)
+                        || (producto.getFechaLanz().after(this.rangoInicio) && producto.getFechaLanz().before(this.rangoFin)))
+                        .collect(Collectors.toList());
+            }
+
         } else if (this.rangoInicio != null) {
-            this.productosData = this.productosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
-                    || (producto.getFechaLanz().after(this.rangoInicio)))
-                    .collect(Collectors.toList());
+            if (this.activeIndex == 0) {
+                this.productosData = this.productosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                        || (producto.getFechaLanz().after(this.rangoInicio)))
+                        .collect(Collectors.toList());
+            } else {
+                this.chartProductosData = this.chartProductosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                        || (producto.getFechaLanz().after(this.rangoInicio)))
+                        .collect(Collectors.toList());
+            }
+
         } else if (this.rangoFin != null) {
-            this.productosData = this.productosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
-                    || (producto.getFechaLanz().before(this.rangoFin)))
-                    .collect(Collectors.toList());
+            if (this.activeIndex == 0) {
+                this.productosData = this.productosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                        || (producto.getFechaLanz().before(this.rangoFin)))
+                        .collect(Collectors.toList());
+            } else {
+                this.chartProductosData = this.chartProductosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                        || (producto.getFechaLanz().before(this.rangoFin)))
+                        .collect(Collectors.toList());
+            }
         }
 
-        productosData.sort(Comparator.comparing(Producto::getPosicion));
+        if (this.activeIndex == 0) {
+            productosData.sort(Comparator.comparing(Producto::getPosicion));
 
-        lazyModel = new LazyProductosDataModel(productosData);
-        lazyModel.setRowCount(productosData.size());
+            lazyModel = new LazyProductosDataModel(productosData);
+            lazyModel.setRowCount(productosData.size());
+        } else {
+            // Creación de los Chart
+            createLineModel();
+            createDonutModel();
+            createBarModel();
+        }
 
-        // Creación del Chart
-        createLineModel();
-        createDonutModel();
-        createBarModel();
+        this.rangoInicio = null;
+        this.rangoFin = null;
+        this.anteriorCategoria = this.idSelectedCategoria;
+        this.idSelectedCategoria = -1;
     }
 
     public boolean hasSelectedProductos() {
@@ -544,10 +614,12 @@ public class Main {
         nuevo = isNew;
         show = justShow;
 
-        // Creación de nuevo del Chart
-        createLineModel();
-        createDonutModel();
-        createBarModel();
+        if (this.activeIndex == 1) {
+            // Creación de nuevo del Chart
+            createLineModel();
+            createDonutModel();
+            createBarModel();
+        }
     }
 
     public String validation(Producto producto) {
@@ -642,10 +714,12 @@ public class Main {
             }
         }
 
-        // Creación de nuevo del Chart
-        createLineModel();
-        createDonutModel();
-        createBarModel();
+        if (this.activeIndex == 1) {
+            // Creación de nuevo del Chart
+            createLineModel();
+            createDonutModel();
+            createBarModel();
+        }
     }
 
     public String getDeleteButtonMessage() {
@@ -658,13 +732,15 @@ public class Main {
     }
 
     public void eliminarProducto(Producto p) {
-        this.productosData.remove(p);
+        this.filtroProductos.remove(p);
         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Producto Eliminado", ""));
 
-        // Creación de nuevo del Chart
-        createLineModel();
-        createDonutModel();
-        createBarModel();
+        if (this.activeIndex == 1) {
+            // Creación de nuevo del Chart
+            createLineModel();
+            createDonutModel();
+            createBarModel();
+        }
     }
 
     public void eliminarSelectedProductos() {
@@ -672,10 +748,12 @@ public class Main {
         this.selectedProductos = null;
         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Productos eliminados"));
 
-        // Creación de nuevo del Chart
-        createLineModel();
-        createDonutModel();
-        createBarModel();
+        if (this.activeIndex == 1) {
+            // Creación de nuevo del Chart
+            createLineModel();
+            createDonutModel();
+            createBarModel();
+        }
     }
 
     public void createLineModel() {
@@ -686,17 +764,12 @@ public class Main {
         LineChartDataSet dataSet = new LineChartDataSet();
         List<Object> precios = new ArrayList<>();
 
-        if (filtroProductos != null && !filtroProductos.isEmpty()) {
+        if (chartProductosData != null && !chartProductosData.isEmpty()) {
 
-            for (Producto producto : filtroProductos) {
+            for (Producto producto : chartProductosData) {
                 precios.add(producto.getPrecio());
             }
 
-        } else if (productosData != null && !productosData.isEmpty()) {
-
-            for (Producto producto : productosData) {
-                precios.add(producto.getPrecio());
-            }
         }
 
         dataSet.setData(precios);
@@ -708,17 +781,12 @@ public class Main {
 
         List<String> labels = new ArrayList<>();
 
-        if (filtroProductos != null && !filtroProductos.isEmpty()) {
+        if (chartProductosData != null && !chartProductosData.isEmpty()) {
 
-            for (Producto producto : filtroProductos) {
+            for (Producto producto : chartProductosData) {
                 labels.add(producto.getNombre());
             }
 
-        } else if (productosData != null && !productosData.isEmpty()) {
-
-            for (Producto producto : productosData) {
-                labels.add(producto.getNombre());
-            }
         }
 
         data.setLabels(labels);
@@ -742,17 +810,12 @@ public class Main {
         DonutChartDataSet dataSet = new DonutChartDataSet();
         List<Number> precios = new ArrayList<>();
 
-        if (filtroProductos != null && !filtroProductos.isEmpty()) {
+        if (chartProductosData != null && !chartProductosData.isEmpty()) {
 
-            for (Producto producto : filtroProductos) {
+            for (Producto producto : chartProductosData) {
                 precios.add(producto.getPrecio());
             }
 
-        } else if (productosData != null && !productosData.isEmpty()) {
-
-            for (Producto producto : productosData) {
-                precios.add(producto.getPrecio());
-            }
         }
         dataSet.setData(precios);
 
@@ -765,17 +828,12 @@ public class Main {
         data.addChartDataSet(dataSet);
         List<String> labels = new ArrayList<>();
 
-        if (filtroProductos != null && !filtroProductos.isEmpty()) {
+        if (chartProductosData != null && !chartProductosData.isEmpty()) {
 
-            for (Producto producto : filtroProductos) {
+            for (Producto producto : chartProductosData) {
                 labels.add(producto.getNombre());
             }
 
-        } else if (productosData != null && !productosData.isEmpty()) {
-
-            for (Producto producto : productosData) {
-                labels.add(producto.getNombre());
-            }
         }
         data.setLabels(labels);
 
@@ -791,17 +849,12 @@ public class Main {
 
         List<Number> precios = new ArrayList<>();
 
-        if (filtroProductos != null && !filtroProductos.isEmpty()) {
+        if (chartProductosData != null && !chartProductosData.isEmpty()) {
 
-            for (Producto producto : filtroProductos) {
+            for (Producto producto : chartProductosData) {
                 precios.add(producto.getPrecio());
             }
 
-        } else if (productosData != null && !productosData.isEmpty()) {
-
-            for (Producto producto : productosData) {
-                precios.add(producto.getPrecio());
-            }
         }
         barDataSet.setData(precios);
 
@@ -830,17 +883,12 @@ public class Main {
 
         List<String> labels = new ArrayList<>();
 
-        if (filtroProductos != null && !filtroProductos.isEmpty()) {
+        if (chartProductosData != null && !chartProductosData.isEmpty()) {
 
-            for (Producto producto : filtroProductos) {
+            for (Producto producto : chartProductosData) {
                 labels.add(producto.getNombre());
             }
 
-        } else if (productosData != null && !productosData.isEmpty()) {
-
-            for (Producto producto : productosData) {
-                labels.add(producto.getNombre());
-            }
         }
         data.setLabels(labels);
         barModel.setData(data);
@@ -994,10 +1042,185 @@ public class Main {
         FacesContext.getCurrentInstance().addMessage(null, msg);
     }
 
-    public void onChange() {
-        if (!filtroProductos.isEmpty() && !productosData.isEmpty()) {
-            this.filtroProductos = null;
-            this.productosData = null;
+    public void fileUpload(FileUploadEvent event) {
+        this.archivoSubido = null;
+        UploadedFile file = event.getFile();
+
+        if (file != null && file.getFileName() != null) {
+            try (InputStream inputStream = file.getInputStream()) {
+                boolean repetido = false;
+                boolean posicion = true;
+                boolean stock = true;
+                boolean noValido = false;
+                boolean showAll = false;
+                XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
+                XSSFSheet sheet = workbook.getSheetAt(0);
+
+                Iterator<Row> rowIterator = sheet.iterator();
+                List<Producto> nuevosProductos = new ArrayList<>();
+                while (rowIterator.hasNext()) {
+                    Row row = rowIterator.next();
+                    if (row.getRowNum() == 0) {
+                        continue;
+                    }
+
+                    for (int i = 0; i < 7; i++) {
+
+                        if (row.getCell(i) == null || getStringValue(row.getCell(i)).equals("")) {
+                            switch (i) {
+                                case 0:
+                                    posicion = false;
+                                    break;
+                                case 1:
+                                    FacesMessage errorMessage2 = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El producto número " + (i + 1)
+                                            + " de tu archivo Excel necesita de un Código identificador");
+                                    FacesContext.getCurrentInstance().addMessage(null, errorMessage2);
+                                    noValido = true;
+                                    break;
+                                case 2:
+                                    FacesMessage errorMessage3 = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El producto número " + (i + 1)
+                                            + " de tu archivo Excel necesita de un Nombre");
+                                    FacesContext.getCurrentInstance().addMessage(null, errorMessage3);
+                                    noValido = true;
+                                    break;
+                                case 4:
+                                    FacesMessage errorMessage4 = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El producto número " + (i + 1)
+                                            + " de tu archivo Excel necesita de una Categoría");
+                                    FacesContext.getCurrentInstance().addMessage(null, errorMessage4);
+                                    noValido = true;
+                                    break;
+                                case 5:
+                                    FacesMessage errorMessage5 = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El producto número " + (i + 1)
+                                            + " de tu archivo Excel necesita de un Precio");
+                                    FacesContext.getCurrentInstance().addMessage(null, errorMessage5);
+                                    noValido = true;
+                                    break;
+                                case 7:
+                                    stock = false;
+                                    break;
+                            }
+                        }
+                    }
+
+                    if (!noValido) {
+                        for (Producto productoExistente : productos) {
+                            if (productoExistente.getCodigo() == Integer.parseInt(getStringValue(row.getCell(1)).substring(0, getStringValue(row.getCell(1)).indexOf(".")))) {
+
+                                FacesMessage errorMessage = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El producto " + productoExistente.getNombre()
+                                        + " de tu lista ya tiene el código número " + productoExistente.getCodigo() + ". Coincide con el código del producto "
+                                        + getStringValue(row.getCell(2)) + " del archivo Excel subido");
+                                FacesContext.getCurrentInstance().addMessage(null, errorMessage);
+                                repetido = true;
+                            }
+                        }
+                    }
+
+                    if (!repetido && !noValido) {
+                        Producto producto = new Producto();
+
+                        if (posicion == false) {
+                            producto.setPosicion(productos.get(productos.size() - 1).getPosicion());
+                        } else {
+                            producto.setPosicion(Integer.parseInt(getStringValue(row.getCell(0)).substring(0, getStringValue(row.getCell(0)).indexOf("."))));
+                        }
+
+                        producto.setCodigo(Integer.parseInt(getStringValue(row.getCell(1)).substring(0, getStringValue(row.getCell(1)).indexOf("."))));
+                        producto.setNombre(getStringValue(row.getCell(2)));
+                        producto.setDescripcion(getStringValue(row.getCell(3)));
+
+                        for (Categoria categoria : this.categorias) {
+                            if (getStringValue(row.getCell(4)).equals(categoria.getNombre())) {
+                                producto.setCategoria(categoria);
+                                break;
+                            }
+                        }
+                        producto.setPrecio(Double.parseDouble(getStringValue(row.getCell(5))));
+
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                        try {
+                            Date fecha = sdf.parse(getStringValue(row.getCell(6)));
+                            producto.setFechaLanz(fecha);
+                        } catch (ParseException ex) {
+                            System.out.println("Error");
+                        }
+
+                        if (stock == false) {
+                            producto.setStock(false);
+                        } else {
+                            if (getStringValue(row.getCell(7)).equals("si")) {
+                                producto.setStock(true);
+                            } else {
+                                producto.setStock(false);
+                            }
+                        }
+
+                        producto.setLugares(new ArrayList<>());
+
+                        nuevosProductos.add(producto);
+                    }
+                }
+
+                if (!nuevosProductos.isEmpty()) {
+
+                    List<String> prods = new ArrayList<>();
+
+                    for (Producto nuevoProd : nuevosProductos) {
+                        this.productos.add(nuevoProd);
+                        
+                        if (!this.filtroProductos.isEmpty()) {
+                            if (this.idSelectedCategoria == 1 && nuevoProd.getCategoria().getId() == 1) {
+                                this.filtroProductos.add(nuevoProd);
+                                this.productosData.add(nuevoProd);
+                            } else if (this.idSelectedCategoria == 2 && nuevoProd.getCategoria().getId() == 2) {
+                                this.filtroProductos.add(nuevoProd);
+                                this.productosData.add(nuevoProd);
+                            } else if (this.idSelectedCategoria == 3 && nuevoProd.getCategoria().getId() == 3) {
+                                this.filtroProductos.add(nuevoProd);
+                                this.productosData.add(nuevoProd);
+                            } else if (this.idSelectedCategoria == -1) {
+                                this.filtroProductos.add(nuevoProd);
+                                this.productosData.add(nuevoProd);
+                            }
+                        }
+                        if (!this.chartProductosData.isEmpty()) {
+                            this.chartProductosData.add(nuevoProd);
+                        }
+                        prods.add(nuevoProd.getNombre());
+                    }
+
+                    FacesMessage msg = new FacesMessage("Hecho", "Productos añadidos: " + prods.toString());
+                    FacesContext.getCurrentInstance().addMessage(null, msg);
+                }
+
+            } catch (IOException | NumberFormatException e) {
+                FacesMessage errorMessage = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Hubo un error al procesar el archivo subido");
+                FacesContext.getCurrentInstance().addMessage(null, errorMessage);
+            }
+        }
+        this.archivoSubido = null;
+
+    }
+
+    private String getStringValue(Cell cell) {
+        if (cell == null) {
+            return null;
+        }
+        if (null == cell.getCellType()) {
+            return null;
+        } else {
+            switch (cell.getCellType()) {
+                case STRING:
+                    return cell.getStringCellValue();
+                case NUMERIC:
+                    if (DateUtil.isCellDateFormatted(cell)) {
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                        return sdf.format(cell.getDateCellValue());
+                    } else {
+                        return String.valueOf(cell.getNumericCellValue());
+                    }
+                default:
+                    return null;
+            }
         }
     }
 }

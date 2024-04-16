@@ -46,16 +46,18 @@
                                    icon="pi pi-exclamation-triangle"/>
                     </p:commandButton>
 
+                    <p:fileUpload mode="simple" label="Añadir desde Excel" update="growl mainForm:j_idt7 mainForm:tabView" skinSimple="true" auto="true"
+                                  listener="#{Main.fileUpload}" style="margin-right: .1rem"/>
 
-                    <p:commandButton value="XLSX (PrimeFaces)" style="margin-right: .1rem" rendered="#{Main.productosData.size() > 0}">
+                    <p:commandButton value="XLSX (PrimeFaces)" style="margin-right: .1rem" rendered="#{Main.productosData.size() > 0 and Main.activeIndex == 0}">
                         <p:dataExporter type="xlsx" target="dtProducts" fileName="productos"/>
                     </p:commandButton>
 
                     <p:commandButton id="export-xlsx-button" widgetVar="export-xlsx-button" style="margin-right: .1rem" value="XLSX (Sin PrimeFaces)"
-                                     actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true" rendered="#{Main.productosData.size() > 0}">
+                                     actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true" rendered="#{Main.productosData.size() > 0 and Main.activeIndex == 0}">
                     </p:commandButton>
 
-                    <p:commandButton value="PDF (PrimeFaces)" rendered="#{Main.productosData.size() > 0}">
+                    <p:commandButton value="PDF (PrimeFaces)" rendered="#{Main.productosData.size() > 0 and Main.activeIndex == 0}">
                         <p:dataExporter type="pdf" target="dtProducts" fileName="productos"/>
                     </p:commandButton>
 
@@ -65,13 +67,11 @@
                     <p:outputLabel for="searchFecha1" style="margin-right: .5rem">Desde</p:outputLabel>
                     <p:datePicker id="searchFecha1" value="#{Main.rangoInicio}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem"
                                   maxdate="#{Main.rangoFin != null ? Main.rangoFin : Main.today}" pattern="dd/MM/yyyy">
-                        <p:ajax event="change" update="mainForm" />
                     </p:datePicker>
 
                     <p:outputLabel for="searchFecha2" style="margin-right: .5rem">Hasta</p:outputLabel>
                     <p:datePicker id="searchFecha2" value="#{Main.rangoFin}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem"
                                   mindate="#{Main.rangoInicio != null ? Main.rangoInicio : null}" maxdate="#{Main.today}" pattern="dd/MM/yyyy">
-                        <p:ajax event="change" update="mainForm" />
                     </p:datePicker>
 
                     <p:outputLabel for="searchCategoria" style="margin-right: .5rem">Categoría</p:outputLabel>
@@ -79,24 +79,22 @@
                         <f:selectItem itemLabel="Todo" itemValue="-1"/>
                         <f:selectItems value="#{Main.categorias}" var="var" itemValue="#{var.id}" itemLabel="#{var.nombre}" />
 
-                        <p:ajax event="change" update="mainForm" />
+                        <!--                        <p:ajax event="change" update="mainForm" />-->
                     </p:selectOneMenu>
 
-                    <p:commandButton icon="pi pi-search" styleClass="ui-button-success" actionListener="#{Main.rellenarTabla}" update="mainForm"
-                                     oncomplete="PF('dtProducts').clearFilters(); cambiarToggler();"/>
+                    <p:commandButton icon="pi pi-search" styleClass="ui-button-success" actionListener="#{Main.rellenarTabla}" update="mainForm:tabView mainForm:j_idt7"
+                                     oncomplete="cambiarToggler();"/>
                 </p:toolbarGroup>
 
             </p:toolbar>
 
             <p:tabView id="tabView" widgetVar="tabView" dynamic="true" activeIndex="#{Main.activeIndex}">
 
-                <p:ajax event="tabChange" listener="#{Main.onChange()}" update=":mainForm:tabView:dtProducts"/>
-
                 <p:tab title="General">
 
                     <!-- Tabla de productos -->
 
-                    <p:remoteCommand name="updateChart" action="#{Main.createLineModel()}" update="mainForm"/>
+                    <!--                    <p:remoteCommand name="updateChart" action="" update="mainForm"/>-->
 
                     <p:dataTable var="producto" id="dtProducts" widgetVar="dtProducts" value="#{Main.productosData}" rowKey="#{producto.codigo}"
                                  selection="#{Main.selectedProducto}" selectionMode="single" rowStyleClass="#{producto.stock ? (producto.precio > 100.0 ? 'caro' : null) : 'no-stock'}"
@@ -109,7 +107,7 @@
                         <p:ajax event="rowUnselectCheckbox" update="mainForm"/>
                         <p:ajax event="toggleSelect" update="mainForm"/>
                         <p:ajax event="rowSelect" listener="#{Main.gestionTablaLugares()}" update="mainForm growl" />
-                        <p:ajax event="filter" oncomplete="updateChart()"/>
+                        <!--                        <p:ajax event="filter" update="mainForm growl"/>-->
                         <p:ajax event="rowToggle" oncomplete="PF('dtLugaresExp').clearFilters();"/>
 
                         <p:column headerText="Posición" sortBy="#{producto.posicion}" width="40px">
@@ -223,7 +221,7 @@
                     <!-- Lazy Table -->
 
                     <p:dataTable var="productoLazy" value="#{Main.lazyModel}" lazy="true" id="lazyTable" virtualScroll="true" scrollRows="20"
-                                 scrollHeight="500" scrollable="true">
+                                 scrollHeight="500" scrollable="true" rendered="false">
 
                         <p:column headerText="Código" style="text-align: right" width="78px" sortBy="#{productoLazy.codigo}">
                             <h:outputText value="#{productoLazy.codigo}" />
@@ -264,15 +262,15 @@
 
                 </p:tab>
 
-                <p:tab title="Charts">
+                <p:tab id="chartsTab" title="Charts">
 
                     <!-- Bar Charts -->
 
-                    <p:lineChart id="chart" widgetVar="chart" model="#{Main.lineModel}" style="width: 100%; height: 500px;" rendered="#{Main.productosData.size() > 0}"/>
+                    <p:lineChart id="chart" widgetVar="chart" model="#{Main.lineModel}" style="width: 100%; height: 500px;" rendered="#{Main.chartProductosData.size() > 0}"/>
 
-                    <p:donutChart id="donutChart" widgetVar="donutChart" model="#{Main.donutModel}" style="width: 100%; height: 500px; margin-top: 50px;" rendered="#{Main.productosData.size() > 0}"/>
+                    <p:donutChart id="donutChart" widgetVar="donutChart" model="#{Main.donutModel}" style="width: 100%; height: 500px; margin-top: 50px;" rendered="#{Main.chartProductosData.size() > 0}"/>
 
-                    <p:barChart id="barChart" widgetVar="barChart" model="#{Main.barModel}" style="width: 100%; height: 500px; margin-top: 50px;" rendered="#{Main.productosData.size() > 0}"/>
+                    <p:barChart id="barChart" widgetVar="barChart" model="#{Main.barModel}" style="width: 100%; height: 500px; margin-top: 50px;" rendered="#{Main.chartProductosData.size() > 0}"/>
 
                 </p:tab>
 
@@ -292,18 +290,18 @@
 
                     <div class="field">
                         <p:outputLabel for="codigo">Código</p:outputLabel>
-                        <p:inputNumber id="codigo" value="#{Main.selectedProducto.codigo}" readonly="#{Main.selectedProducto.codigo!=0 || Main.show}"
+                        <p:inputNumber id="codigo" value="#{Main.selectedProducto.codigo}" disabled="#{Main.selectedProducto.codigo!=0 || Main.show}"
                                        styleClass="align-right" emptyValue="0" />
                     </div>
 
                     <div class="field">
                         <p:outputLabel for="nombre">Nombre</p:outputLabel>
-                        <p:inputText id="nombre" value="#{Main.selectedProducto.nombre}" readonly="#{Main.show}" />
+                        <p:inputText id="nombre" value="#{Main.selectedProducto.nombre}" disabled="#{Main.show}" />
                     </div>
 
                     <div class="field">
                         <p:outputLabel for="descripcion">Descripción</p:outputLabel>
-                        <p:inputTextarea id="descripcion" value="#{Main.selectedProducto.descripcion}" readonly="#{Main.show}" />
+                        <p:inputTextarea id="descripcion" value="#{Main.selectedProducto.descripcion}" disabled="#{Main.show}" />
                     </div>
 
                     <div class="field">
@@ -318,13 +316,13 @@
                     <div class="field">
                         <p:outputLabel for="precio" style="text-align: end;">Precio</p:outputLabel>
                         <p:inputNumber id="precio" value="#{Main.selectedProducto.precio}" emptyValue="0" symbol="€" symbolPosition="s" decimalSeparator=","
-                                       thousandSeparator="." styleClass="align-right" readonly="#{Main.show}"/>
+                                       thousandSeparator="." styleClass="align-right" disabled="#{Main.show}"/>
                     </div>
 
                     <div class="field">
                         <p:outputLabel for="fecha">Fecha de lanzamiento</p:outputLabel>
                         <p:datePicker id="fecha" value="#{Main.selectedProducto.fechaLanz}" monthNavigator="true" yearNavigator="true" disabled="#{Main.show}"
-                                      mindate="#{Main.nuevo ? Main.minDate : null}" pattern="dd/MM/yyyy" readonly="#{Main.show}"/>
+                                      mindate="#{Main.nuevo ? Main.minDate : null}" pattern="dd/MM/yyyy"/>
                     </div>
 
                     <div class="field" style="margin-top: 10px">
