@@ -22,10 +22,12 @@ import javax.faces.bean.ViewScoped;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.primefaces.PrimeFaces;
@@ -119,6 +121,8 @@ public class Main {
 
     private UploadedFile archivoSubido;
     private int anteriorCategoria;
+    private Date rangoInicioAnterior;
+    private Date rangoFinAnterior;
 
     // INIT
     //
@@ -140,7 +144,7 @@ public class Main {
 
         // Conjunto de fechas  para usarlas en los objetos de prueba
         String fechaString1 = "12/01/2024", fechaString2 = "20/02/2024", fechaString3 = "25/03/2023", fechaString4 = "01/04/2024",
-                fechaString5 = "05/06/2023", fechaString6 = "18/10/2023";
+                fechaString5 = "05/06/2014", fechaString6 = "18/10/2023";
 
         // Transformación de String a Date, con SimpleDateFormat, de las 6 fechas
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
@@ -497,6 +501,30 @@ public class Main {
         this.archivoSubido = archivoSubido;
     }
 
+    public int getAnteriorCategoria() {
+        return anteriorCategoria;
+    }
+
+    public void setAnteriorCategoria(int anteriorCategoria) {
+        this.anteriorCategoria = anteriorCategoria;
+    }
+
+    public Date getRangoInicioAnterior() {
+        return rangoInicioAnterior;
+    }
+
+    public void setRangoInicioAnterior(Date rangoInicioAnterior) {
+        this.rangoInicioAnterior = rangoInicioAnterior;
+    }
+
+    public Date getRangoFinAnterior() {
+        return rangoFinAnterior;
+    }
+
+    public void setRangoFinAnterior(Date rangoFinAnterior) {
+        this.rangoFinAnterior = rangoFinAnterior;
+    }
+
     // ===============================================================================
     // MÉTODOS DEL BEAN
     //
@@ -520,11 +548,14 @@ public class Main {
         this.filtroProductos = new ArrayList<>();
         this.chartProductosData = new ArrayList<>();
 
+        for (Producto prod : productos) {
+            this.productosData.add(prod);
+        }
+
         if (this.idSelectedCategoria != -1) {
             for (Producto prod : productos) {
                 if (prod.getCategoria().getId() == this.idSelectedCategoria) {
                     if (this.activeIndex == 0) {
-                        this.productosData.add(prod);
                         this.filtroProductos.add(prod);
                     } else {
                         this.chartProductosData.add(prod);
@@ -534,7 +565,6 @@ public class Main {
         } else {
             for (Producto prod : productos) {
                 if (this.activeIndex == 0) {
-                    this.productosData.add(prod);
                     this.filtroProductos.add(prod);
                 } else {
                     this.chartProductosData.add(prod);
@@ -590,10 +620,9 @@ public class Main {
             createBarModel();
         }
 
-        this.rangoInicio = null;
-        this.rangoFin = null;
+        this.rangoInicioAnterior = this.rangoInicio;
+        this.rangoFinAnterior = this.rangoFin;
         this.anteriorCategoria = this.idSelectedCategoria;
-        this.idSelectedCategoria = -1;
     }
 
     public boolean hasSelectedProductos() {
@@ -615,7 +644,7 @@ public class Main {
         show = justShow;
 
         if (this.activeIndex == 1) {
-            // Creación de nuevo del Chart
+            // Creación de nuevo de los Chart
             createLineModel();
             createDonutModel();
             createBarModel();
@@ -652,16 +681,29 @@ public class Main {
 
         if (nuevo) {
             boolean exists = false;
-            for (int i = 0; i < productos.size(); i++) {
-                if (productos.get(i).getCodigo() == selectedProducto.getCodigo()) {
+            for (Producto productoBase : productos) {
+                if (productoBase.getCodigo() == selectedProducto.getCodigo()) {
                     exists = true;
                 }
             }
+            if (!productosData.isEmpty()) {
+                for (Producto productoData : productosData) {
+                    if (productoData.getCodigo() == selectedProducto.getCodigo()) {
+                        exists = true;
+                    }
+                }
+            }
+
             if (!exists) {
                 switch (validation(this.selectedProducto)) {
                     case "correcto":
                         this.productos.add(this.selectedProducto);
                         this.productosData.add(this.selectedProducto);
+                        if (this.activeIndex == 0) {
+                            this.filtroProductos.add(this.selectedProducto);
+                        } else if (this.activeIndex == 1) {
+                            this.chartProductosData.add(this.selectedProducto);
+                        }
                         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Producto Añadido Correctamente", ""));
                         PrimeFaces.current().executeScript("PF('manageProductDialog').hide()");
                         break;
@@ -679,10 +721,6 @@ public class Main {
             } else {
                 FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "El ID seleccionado ya existe", ""));
                 switch (validation(this.selectedProducto)) {
-                    case "correcto":
-                        FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Producto Actualizado", ""));
-                        PrimeFaces.current().executeScript("PF('manageProductDialog').hide()");
-                        break;
                     case "ambos":
                         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "El nombre no debe estar vacío", ""));
                         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "La descripción debe tener más de 10 caracteres", ""));
@@ -694,6 +732,7 @@ public class Main {
                         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "La descripción debe tener más de 10 caracteres", ""));
                         break;
                 }
+                exists = false;
             }
         } else {
             switch (validation(this.selectedProducto)) {
@@ -1052,12 +1091,20 @@ public class Main {
                 boolean posicion = true;
                 boolean stock = true;
                 boolean noValido = false;
-                boolean showAll = false;
-                XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
-                XSSFSheet sheet = workbook.getSheetAt(0);
 
+                Workbook workbook;
+                if (file.getFileName().toLowerCase().endsWith(".xlsx")) {
+                    workbook = new XSSFWorkbook(inputStream);
+                } else if (file.getFileName().toLowerCase().endsWith(".xls")) {
+                    workbook = new HSSFWorkbook(inputStream);
+                } else {
+                    throw new IllegalArgumentException("Tipo de archivo no soportado: " + file.getFileName());
+                }
+
+                Sheet sheet = workbook.getSheetAt(0);
                 Iterator<Row> rowIterator = sheet.iterator();
                 List<Producto> nuevosProductos = new ArrayList<>();
+
                 while (rowIterator.hasNext()) {
                     Row row = rowIterator.next();
                     if (row.getRowNum() == 0) {
@@ -1065,7 +1112,6 @@ public class Main {
                     }
 
                     for (int i = 0; i < 7; i++) {
-
                         if (row.getCell(i) == null || getStringValue(row.getCell(i)).equals("")) {
                             switch (i) {
                                 case 0:
@@ -1103,14 +1149,26 @@ public class Main {
                     }
 
                     if (!noValido) {
-                        for (Producto productoExistente : productos) {
-                            if (productoExistente.getCodigo() == Integer.parseInt(getStringValue(row.getCell(1)).substring(0, getStringValue(row.getCell(1)).indexOf(".")))) {
 
-                                FacesMessage errorMessage = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El producto " + productoExistente.getNombre()
-                                        + " de tu lista ya tiene el código número " + productoExistente.getCodigo() + ". Coincide con el código del producto "
-                                        + getStringValue(row.getCell(2)) + " del archivo Excel subido");
-                                FacesContext.getCurrentInstance().addMessage(null, errorMessage);
-                                repetido = true;
+                        if (!chartProductosData.isEmpty()) {
+                            for (Producto chartProd : chartProductosData) {
+                                if (chartProd.getCodigo() == Integer.parseInt(getStringValue(row.getCell(1)).substring(0, getStringValue(row.getCell(1)).indexOf(".")))) {
+                                    repetido = true;
+                                    FacesMessage errorMessage = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El producto " + chartProd.getNombre()
+                                            + " de tu lista ya tiene el código número " + chartProd.getCodigo() + ". Coincide con el código del producto "
+                                            + getStringValue(row.getCell(2)) + " del archivo Excel subido");
+                                    FacesContext.getCurrentInstance().addMessage(null, errorMessage);
+                                }
+                            }
+                        } else if (!filtroProductos.isEmpty()) {
+                            for (Producto productoExistente : filtroProductos) {
+                                if (productoExistente.getCodigo() == Integer.parseInt(getStringValue(row.getCell(1)).substring(0, getStringValue(row.getCell(1)).indexOf(".")))) {
+                                    repetido = true;
+                                    FacesMessage errorMessage = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El producto " + productoExistente.getNombre()
+                                            + " de tu lista ya tiene el código número " + productoExistente.getCodigo() + ". Coincide con el código del producto "
+                                            + getStringValue(row.getCell(2)) + " del archivo Excel subido");
+                                    FacesContext.getCurrentInstance().addMessage(null, errorMessage);
+                                }
                             }
                         }
                     }
@@ -1161,31 +1219,66 @@ public class Main {
                 }
 
                 if (!nuevosProductos.isEmpty()) {
-
                     List<String> prods = new ArrayList<>();
-
                     for (Producto nuevoProd : nuevosProductos) {
-                        this.productos.add(nuevoProd);
-                        
-                        if (!this.filtroProductos.isEmpty()) {
-                            if (this.idSelectedCategoria == 1 && nuevoProd.getCategoria().getId() == 1) {
-                                this.filtroProductos.add(nuevoProd);
-                                this.productosData.add(nuevoProd);
-                            } else if (this.idSelectedCategoria == 2 && nuevoProd.getCategoria().getId() == 2) {
-                                this.filtroProductos.add(nuevoProd);
-                                this.productosData.add(nuevoProd);
-                            } else if (this.idSelectedCategoria == 3 && nuevoProd.getCategoria().getId() == 3) {
-                                this.filtroProductos.add(nuevoProd);
-                                this.productosData.add(nuevoProd);
-                            } else if (this.idSelectedCategoria == -1) {
-                                this.filtroProductos.add(nuevoProd);
-                                this.productosData.add(nuevoProd);
+                        if (!this.filtroProductos.isEmpty() || !this.chartProductosData.isEmpty()) {
+                            boolean enFecha = true;
+
+                            if (this.rangoInicioAnterior != null && this.rangoFin == null) {
+                                enFecha = nuevoProd.getFechaLanz().compareTo(this.rangoInicioAnterior) >= 0;
+                            } else if (this.rangoInicioAnterior == null && this.rangoFinAnterior != null) {
+                                enFecha = nuevoProd.getFechaLanz().compareTo(this.rangoFinAnterior) <= 0;
+                            } else if (this.rangoInicioAnterior != null && this.rangoFinAnterior != null) {
+                                enFecha = (nuevoProd.getFechaLanz().compareTo(this.rangoInicioAnterior) >= 0) && (nuevoProd.getFechaLanz().compareTo(this.rangoFinAnterior) <= 0);
+                            }
+
+                            if (this.anteriorCategoria == 1 && nuevoProd.getCategoria().getId() == 1 && enFecha) {
+                                if (!this.filtroProductos.isEmpty()) {
+                                    this.filtroProductos.add(nuevoProd);
+                                }
+
+                                if (!this.chartProductosData.isEmpty()) {
+                                    this.chartProductosData.add(nuevoProd);
+                                }
+                            } else if (this.anteriorCategoria == 2 && nuevoProd.getCategoria().getId() == 2 && enFecha) {
+                                if (!this.filtroProductos.isEmpty()) {
+                                    this.filtroProductos.add(nuevoProd);
+                                }
+
+                                if (!this.chartProductosData.isEmpty()) {
+                                    this.chartProductosData.add(nuevoProd);
+                                }
+                            } else if (this.anteriorCategoria == 3 && nuevoProd.getCategoria().getId() == 3 && enFecha) {
+                                if (!this.filtroProductos.isEmpty()) {
+                                    this.filtroProductos.add(nuevoProd);
+                                }
+
+                                if (!this.chartProductosData.isEmpty()) {
+                                    this.chartProductosData.add(nuevoProd);
+                                }
+                            } else if (this.anteriorCategoria == -1 && enFecha) {
+                                if (!this.filtroProductos.isEmpty()) {
+                                    this.filtroProductos.add(nuevoProd);
+                                }
+
+                                if (!this.chartProductosData.isEmpty()) {
+                                    this.chartProductosData.add(nuevoProd);
+                                }
                             }
                         }
-                        if (!this.chartProductosData.isEmpty()) {
-                            this.chartProductosData.add(nuevoProd);
-                        }
+
+                        this.productosData.add(nuevoProd);
                         prods.add(nuevoProd.getNombre());
+                    }
+
+                    productosData.sort(Comparator.comparing(Producto::getPosicion));
+                    filtroProductos.sort(Comparator.comparing(Producto::getPosicion));
+                    if (!this.chartProductosData.isEmpty()) {
+                        // Creación de nuevo de los Chart
+                        chartProductosData.sort(Comparator.comparing(Producto::getPosicion));
+                        createLineModel();
+                        createDonutModel();
+                        createBarModel();
                     }
 
                     FacesMessage msg = new FacesMessage("Hecho", "Productos añadidos: " + prods.toString());
@@ -1195,10 +1288,12 @@ public class Main {
             } catch (IOException | NumberFormatException e) {
                 FacesMessage errorMessage = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Hubo un error al procesar el archivo subido");
                 FacesContext.getCurrentInstance().addMessage(null, errorMessage);
+            } catch (IllegalArgumentException e) {
+                FacesMessage errorMessage = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", e.getMessage());
+                FacesContext.getCurrentInstance().addMessage(null, errorMessage);
             }
         }
         this.archivoSubido = null;
-
     }
 
     private String getStringValue(Cell cell) {

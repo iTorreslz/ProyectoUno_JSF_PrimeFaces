@@ -47,18 +47,19 @@
                     </p:commandButton>
 
                     <p:fileUpload mode="simple" label="Añadir desde Excel" update="growl mainForm:j_idt7 mainForm:tabView" skinSimple="true" auto="true"
-                                  listener="#{Main.fileUpload}" style="margin-right: .1rem"/>
+                                  listener="#{Main.fileUpload}" style="margin-right: .1rem" rendered="#{Main.productosData.size() > 0 and Main.chartProductosData.size() == 0 and Main.activeIndex == 0
+                                              or Main.chartProductosData.size() > 0 and Main.activeIndex == 1}"/>
 
-                    <p:commandButton value="XLSX (PrimeFaces)" style="margin-right: .1rem" rendered="#{Main.productosData.size() > 0 and Main.activeIndex == 0}">
-                        <p:dataExporter type="xlsx" target="dtProducts" fileName="productos"/>
+                    <p:commandButton value="XLSX (PrimeFaces)" style="margin-right: .1rem" rendered="#{Main.productosData.size() > 0 and Main.chartProductosData.size() == 0 and Main.activeIndex == 0}">
+                        <p:dataExporter type="xlsx" target="mainForm:tabView:dtProducts" fileName="productos"/>
                     </p:commandButton>
 
                     <p:commandButton id="export-xlsx-button" widgetVar="export-xlsx-button" style="margin-right: .1rem" value="XLSX (Sin PrimeFaces)"
-                                     actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true" rendered="#{Main.productosData.size() > 0 and Main.activeIndex == 0}">
+                                     actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true" rendered="#{Main.productosData.size() > 0 and Main.chartProductosData.size() == 0 and Main.activeIndex == 0}">
                     </p:commandButton>
 
-                    <p:commandButton value="PDF (PrimeFaces)" rendered="#{Main.productosData.size() > 0 and Main.activeIndex == 0}">
-                        <p:dataExporter type="pdf" target="dtProducts" fileName="productos"/>
+                    <p:commandButton value="PDF (PrimeFaces)" rendered="#{Main.productosData.size() > 0 and Main.chartProductosData.size() == 0 and Main.activeIndex == 0}">
+                        <p:dataExporter type="pdf" target="mainForm:tabView:dtProducts" fileName="productos"/>
                     </p:commandButton>
 
                 </p:toolbarGroup>
@@ -90,13 +91,15 @@
 
             <p:tabView id="tabView" widgetVar="tabView" dynamic="true" activeIndex="#{Main.activeIndex}">
 
+                <p:ajax event="tabChange" update="mainForm:j_idt7"/>
+
                 <p:tab title="General">
 
                     <!-- Tabla de productos -->
 
                     <!--                    <p:remoteCommand name="updateChart" action="" update="mainForm"/>-->
 
-                    <p:dataTable var="producto" id="dtProducts" widgetVar="dtProducts" value="#{Main.productosData}" rowKey="#{producto.codigo}"
+                    <p:dataTable var="producto" id="dtProducts" widgetVar="dtProducts" value="#{Main.filtroProductos}" rowKey="#{producto.codigo}"
                                  selection="#{Main.selectedProducto}" selectionMode="single" rowStyleClass="#{producto.stock ? (producto.precio > 100.0 ? 'caro' : null) : 'no-stock'}"
                                  filteredValue="#{Main.filtroProductos}" draggableRows="true">
 
@@ -290,7 +293,7 @@
 
                     <div class="field">
                         <p:outputLabel for="codigo">Código</p:outputLabel>
-                        <p:inputNumber id="codigo" value="#{Main.selectedProducto.codigo}" disabled="#{Main.selectedProducto.codigo!=0 || Main.show}"
+                        <p:inputNumber id="codigo" value="#{Main.selectedProducto.codigo}" disabled="#{!Main.nuevo or Main.show}"
                                        styleClass="align-right" emptyValue="0" />
                     </div>
 
