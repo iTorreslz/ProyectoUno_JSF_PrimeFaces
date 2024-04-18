@@ -25,10 +25,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.primefaces.PrimeFaces;
 import org.primefaces.event.FileUploadEvent;
@@ -95,6 +97,8 @@ public class Main {
 
     private int idSelectedCategoria;
 
+    private int searchCategoria;
+
     private boolean nuevo = false;
 
     private boolean show = false;
@@ -120,8 +124,11 @@ public class Main {
     private int activeIndex;
 
     private UploadedFile archivoSubido;
+
     private int anteriorCategoria;
+
     private Date rangoInicioAnterior;
+
     private Date rangoFinAnterior;
 
     // INIT
@@ -525,6 +532,14 @@ public class Main {
         this.rangoFinAnterior = rangoFinAnterior;
     }
 
+    public int getSearchCategoria() {
+        return searchCategoria;
+    }
+
+    public void setSearchCategoria(int searchCategoria) {
+        this.searchCategoria = searchCategoria;
+    }
+
     // ===============================================================================
     // MÉTODOS DEL BEAN
     //
@@ -552,9 +567,9 @@ public class Main {
             this.productosData.add(prod);
         }
 
-        if (this.idSelectedCategoria != -1) {
+        if (this.searchCategoria != -1) {
             for (Producto prod : productos) {
-                if (prod.getCategoria().getId() == this.idSelectedCategoria) {
+                if (prod.getCategoria().getId() == this.searchCategoria) {
                     if (this.activeIndex == 0) {
                         this.filtroProductos.add(prod);
                     } else {
@@ -574,7 +589,7 @@ public class Main {
 
         if (this.rangoInicio != null && this.rangoFin != null) {
             if (this.activeIndex == 0) {
-                this.productosData = this.productosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                this.filtroProductos = this.filtroProductos.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
                         || producto.getFechaLanz().equals(this.rangoFin)
                         || (producto.getFechaLanz().after(this.rangoInicio) && producto.getFechaLanz().before(this.rangoFin)))
                         .collect(Collectors.toList());
@@ -587,7 +602,7 @@ public class Main {
 
         } else if (this.rangoInicio != null) {
             if (this.activeIndex == 0) {
-                this.productosData = this.productosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                this.filtroProductos = this.filtroProductos.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
                         || (producto.getFechaLanz().after(this.rangoInicio)))
                         .collect(Collectors.toList());
             } else {
@@ -598,11 +613,11 @@ public class Main {
 
         } else if (this.rangoFin != null) {
             if (this.activeIndex == 0) {
-                this.productosData = this.productosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                this.filtroProductos = this.filtroProductos.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoFin)
                         || (producto.getFechaLanz().before(this.rangoFin)))
                         .collect(Collectors.toList());
             } else {
-                this.chartProductosData = this.chartProductosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
+                this.chartProductosData = this.chartProductosData.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoFin)
                         || (producto.getFechaLanz().before(this.rangoFin)))
                         .collect(Collectors.toList());
             }
@@ -622,7 +637,7 @@ public class Main {
 
         this.rangoInicioAnterior = this.rangoInicio;
         this.rangoFinAnterior = this.rangoFin;
-        this.anteriorCategoria = this.idSelectedCategoria;
+        this.anteriorCategoria = this.searchCategoria;
     }
 
     public boolean hasSelectedProductos() {
@@ -700,7 +715,12 @@ public class Main {
                         this.productos.add(this.selectedProducto);
                         this.productosData.add(this.selectedProducto);
                         if (this.activeIndex == 0) {
-                            this.filtroProductos.add(this.selectedProducto);
+
+                            if (selectedProducto.getCategoria().getId() == this.searchCategoria) {
+                                this.filtroProductos.add(this.selectedProducto);
+                            } else if (this.searchCategoria == -1) {
+                                this.filtroProductos.add(this.selectedProducto);
+                            }
                         } else if (this.activeIndex == 1) {
                             this.chartProductosData.add(this.selectedProducto);
                         }
@@ -732,11 +752,13 @@ public class Main {
                         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "La descripción debe tener más de 10 caracteres", ""));
                         break;
                 }
-                exists = false;
             }
         } else {
             switch (validation(this.selectedProducto)) {
                 case "correcto":
+                    if (this.searchCategoria != this.idSelectedCategoria) {
+                        rellenarTabla();
+                    }
                     FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Producto Actualizado", ""));
                     PrimeFaces.current().executeScript("PF('manageProductDialog').hide()");
                     break;
@@ -978,8 +1000,21 @@ public class Main {
                 cell.setCellValue(headers[i]);
             }
 
+            XSSFCellStyle estiloCelda = workbook.createCellStyle();
+
+            XSSFColor gris = new XSSFColor(new java.awt.Color(223, 223, 223));
+
+            estiloCelda.setFillForegroundColor(gris);
+            estiloCelda.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(estiloCelda);
+            }
+
             int rowNum = 1;
-            for (Producto producto : this.productosData) {
+            for (Producto producto : this.filtroProductos) {
                 Row row = sheet.createRow(rowNum++);
 
                 row.createCell(0).setCellValue(producto.getCodigo());
@@ -1316,6 +1351,14 @@ public class Main {
             }
         }
         this.archivoSubido = null;
+    }
+
+    public double getSum() {
+        if (!filtroProductos.isEmpty()) {
+            return filtroProductos.stream().mapToDouble(Producto::getPrecio).sum();
+        } else {
+            return 0;
+        }
     }
 
     private String getStringValue(Cell cell) {

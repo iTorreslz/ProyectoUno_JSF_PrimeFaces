@@ -33,9 +33,8 @@
             <p:toolbar>
                 <p:toolbarGroup>
 
-                    <p:commandButton icon="pi pi-plus" styleClass="ui-button-success" style="margin-right: .5rem"
-                                     actionListener="#{Main.openNew()}" update=":dialogs:manage-product-content"
-                                     oncomplete="PF('manageProductDialog').show()">
+                    <p:commandButton icon="pi pi-plus" styleClass="ui-button-success" style="margin-right: .5rem" actionListener="#{Main.openNew()}" update=":dialogs:manage-product-content"
+                                     oncomplete="PF('manageProductDialog').show()" disabled="#{Main.productosData.size() == 0}">
                     </p:commandButton>
 
                     <p:commandButton id="delete-products-button" widgetVar="delete-products-button" value="#{Main.deleteButtonMessage}"
@@ -47,18 +46,18 @@
                     </p:commandButton>
 
                     <p:fileUpload mode="simple" label="Añadir desde Excel" update="growl mainForm:j_idt7 mainForm:tabView" skinSimple="true" auto="true"
-                                  listener="#{Main.fileUpload}" style="margin-right: .1rem" rendered="#{Main.productosData.size() > 0 and Main.chartProductosData.size() == 0 and Main.activeIndex == 0
-                                              or Main.chartProductosData.size() > 0 and Main.activeIndex == 1}"/>
+                                  listener="#{Main.fileUpload}" style="margin-right: .1rem" disabled="#{Main.filtroProductos.size() == 0 and Main.activeIndex == 0 or Main.chartProductosData.size() == 0 and Main.activeIndex == 1
+                                              or Main.filtroProductos.size() > 0 and Main.activeIndex == 1 or Main.chartProductosData.size() > 0 and Main.activeIndex == 0}"/>
 
-                    <p:commandButton value="XLSX (PrimeFaces)" style="margin-right: .1rem" rendered="#{Main.productosData.size() > 0 and Main.chartProductosData.size() == 0 and Main.activeIndex == 0}">
+                    <p:commandButton value="XLSX (PrimeFaces)" style="margin-right: .1rem" rendered="#{Main.activeIndex == 0}" disabled="#{Main.filtroProductos.size() == 0 and Main.activeIndex == 0}">
                         <p:dataExporter type="xlsx" target="mainForm:tabView:dtProducts" fileName="productos"/>
                     </p:commandButton>
 
-                    <p:commandButton id="export-xlsx-button" widgetVar="export-xlsx-button" style="margin-right: .1rem" value="XLSX (Sin PrimeFaces)"
-                                     actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true" rendered="#{Main.productosData.size() > 0 and Main.chartProductosData.size() == 0 and Main.activeIndex == 0}">
+                    <p:commandButton id="export-xlsx-button" widgetVar="export-xlsx-button" style="margin-right: .1rem" value="XLSX (Sin PrimeFaces)" rendered="#{Main.activeIndex == 0}"
+                                     actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true" disabled="#{Main.filtroProductos.size() == 0 and Main.activeIndex == 0}">
                     </p:commandButton>
 
-                    <p:commandButton value="PDF (PrimeFaces)" rendered="#{Main.productosData.size() > 0 and Main.chartProductosData.size() == 0 and Main.activeIndex == 0}">
+                    <p:commandButton value="PDF (PrimeFaces)" disabled="#{Main.filtroProductos.size() == 0 and Main.activeIndex == 0}" rendered="#{Main.activeIndex == 0}">
                         <p:dataExporter type="pdf" target="mainForm:tabView:dtProducts" fileName="productos"/>
                     </p:commandButton>
 
@@ -68,15 +67,17 @@
                     <p:outputLabel for="searchFecha1" style="margin-right: .5rem">Desde</p:outputLabel>
                     <p:datePicker id="searchFecha1" value="#{Main.rangoInicio}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem"
                                   maxdate="#{Main.rangoFin != null ? Main.rangoFin : Main.today}" pattern="dd/MM/yyyy">
+                        <p:ajax event="change" update="mainForm:j_idt7"/>
                     </p:datePicker>
 
                     <p:outputLabel for="searchFecha2" style="margin-right: .5rem">Hasta</p:outputLabel>
                     <p:datePicker id="searchFecha2" value="#{Main.rangoFin}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem"
                                   mindate="#{Main.rangoInicio != null ? Main.rangoInicio : null}" maxdate="#{Main.today}" pattern="dd/MM/yyyy">
+                        <p:ajax event="change" update="mainForm:j_idt7"/>
                     </p:datePicker>
 
                     <p:outputLabel for="searchCategoria" style="margin-right: .5rem">Categoría</p:outputLabel>
-                    <p:selectOneMenu id="searchCategoria" styleClass="ui-custom-filter" style="margin-right: .5rem" value="#{Main.idSelectedCategoria}">
+                    <p:selectOneMenu id="searchCategoria" styleClass="ui-custom-filter" style="margin-right: .5rem" value="#{Main.searchCategoria}">
                         <f:selectItem itemLabel="Todo" itemValue="-1"/>
                         <f:selectItems value="#{Main.categorias}" var="var" itemValue="#{var.id}" itemLabel="#{var.nombre}" />
 
@@ -84,7 +85,7 @@
                     </p:selectOneMenu>
 
                     <p:commandButton icon="pi pi-search" styleClass="ui-button-success" actionListener="#{Main.rellenarTabla}" update="mainForm:tabView mainForm:j_idt7"
-                                     oncomplete="cambiarToggler();"/>
+                                     onclick="cambiarToggler();"/>
                 </p:toolbarGroup>
 
             </p:toolbar>
@@ -110,7 +111,6 @@
                         <p:ajax event="rowUnselectCheckbox" update="mainForm"/>
                         <p:ajax event="toggleSelect" update="mainForm"/>
                         <p:ajax event="rowSelect" listener="#{Main.gestionTablaLugares()}" update="mainForm growl" />
-                        <!--                        <p:ajax event="filter" update="mainForm growl"/>-->
                         <p:ajax event="rowToggle" oncomplete="PF('dtLugaresExp').clearFilters();"/>
 
                         <p:column headerText="Posición" sortBy="#{producto.posicion}" width="40px">
@@ -196,6 +196,20 @@
 
                             </p:dataTable>
                         </p:rowExpansion>
+
+                        <p:columnGroup type="footer">
+                            <p:row>
+                                <p:column colspan="7" style="text-align:right" footerText="Total Precio:"/>
+                                <p:column style="text-align:right">
+                                    <f:facet name="footer">
+                                        <h:outputText value="#{Main.getSum()}">
+                                            <f:convertNumber type="currency" currencySymbol="€" pattern="#,##0.00¤" locale="es" />
+                                        </h:outputText>
+                                    </f:facet>
+                                </p:column>
+                                <p:column colspan="2"/>
+                            </p:row>
+                        </p:columnGroup>
 
                     </p:dataTable>
 
@@ -334,7 +348,7 @@
 
                     <div class="field" style="margin-top: 10px">
                         <p:commandButton value="Guardar" icon="pi pi-check" actionListener="#{Main.saveProduct}" rendered="#{!Main.show}"
-                                         update="mainForm growl" process="manage-product-content" />
+                                         update="mainForm:tabView growl" process="manage-product-content" />
                         <p:commandButton value="Salir" icon="pi pi-times" onclick="PF('manageProductDialog').hide()"
                                          class="ui-button-secondary" type="button" style="margin-top: 5px"/>
                     </div>
