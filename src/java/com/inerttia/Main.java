@@ -1025,12 +1025,23 @@ public class Main {
             this.selected = -1;
             FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "No hay stock", ""));
         } else {
-            this.lugaresSelected = new ArrayList<>();
-            this.lugaresSelected.addAll(selectedProducto.getLugares());
             if (!lugaresSelected.isEmpty()) {
-                PrimeFaces.current().executeScript("PF('dtLugares').clearFilters();");
+                this.lugaresSelected = new ArrayList<>();
+                if (this.selected == this.selectedProducto.getCodigo()) {
+                    this.selected = -1;
+                    this.selectedProducto = null;
+                    PrimeFaces.current().executeScript("PF('dtLugares').clearFilters();");
+                } else {
+                    this.lugaresSelected.addAll(selectedProducto.getLugares());
+                    this.selected = this.selectedProducto.getCodigo();
+                    PrimeFaces.current().executeScript("PF('dtLugares').clearFilters();");
+                }
+
+            } else {
+                this.lugaresSelected = new ArrayList<>();
+                this.lugaresSelected.addAll(selectedProducto.getLugares());
+                this.selected = this.selectedProducto.getCodigo();
             }
-            this.selected = this.selectedProducto.getCodigo();
         }
     }
 
@@ -1060,25 +1071,36 @@ public class Main {
 
     public void onRowReorder(ReorderEvent event) {
 
-        for (Producto producto : productosData) {
-            if (producto.getPosicion() == event.getFromIndex()) {
-                producto.setPosicion(event.getToIndex());
-            } else {
-                if (event.getToIndex() < event.getFromIndex()) {
-                    if (producto.getPosicion() >= event.getToIndex() && producto.getPosicion() < event.getFromIndex()) {
-                        producto.setPosicion(producto.getPosicion() + 1);
-                    }
+        boolean noReorder = false;
+
+        if (filtroProductos.size() != productosData.size()) {
+            filtroProductos.sort(Comparator.comparing(Producto::getPosicion));
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("No se pueden reordenar las filas cuando se está filtrando", ""));
+            noReorder = true;
+        }
+
+        if (!noReorder) {
+            for (Producto producto : productosData) {
+                if (producto.getPosicion() == event.getFromIndex()) {
+                    producto.setPosicion(event.getToIndex());
                 } else {
-                    if (producto.getPosicion() <= event.getToIndex() && producto.getPosicion() != 0
-                            && producto.getPosicion() > event.getFromIndex()) {
-                        producto.setPosicion(producto.getPosicion() - 1);
+                    if (event.getToIndex() < event.getFromIndex()) {
+                        if (producto.getPosicion() >= event.getToIndex() && producto.getPosicion() < event.getFromIndex()) {
+                            producto.setPosicion(producto.getPosicion() + 1);
+                        }
+                    } else {
+                        if (producto.getPosicion() <= event.getToIndex() && producto.getPosicion() != 0
+                                && producto.getPosicion() > event.getFromIndex()) {
+                            producto.setPosicion(producto.getPosicion() - 1);
+                        }
                     }
                 }
             }
+
+            FacesMessage msg = new FacesMessage(FacesMessage.SEVERITY_INFO, "Posición de " + productosData.get(event.getFromIndex()).getNombre().toUpperCase() + " cambiada.", "Desde: " + (event.getFromIndex() + 1) + ", Hasta:" + (event.getToIndex() + 1));
+            FacesContext.getCurrentInstance().addMessage(null, msg);
         }
 
-        FacesMessage msg = new FacesMessage(FacesMessage.SEVERITY_INFO, "Posición de " + productosData.get(event.getFromIndex()).getNombre().toUpperCase() + " cambiada.", "Desde: " + event.getFromIndex() + ", Hasta:" + event.getToIndex());
-        FacesContext.getCurrentInstance().addMessage(null, msg);
     }
 
     public void fileUpload(FileUploadEvent event) {
