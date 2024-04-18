@@ -29,6 +29,7 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -63,73 +64,58 @@ public class Main {
 
     // VARIABLES
     //
-    private List<Producto> productos;
-
-    private List<Categoria> categorias;
-
-    Random random = new Random();
-
-    private List<Lugar> lugares;
-
-    private List<Lugar> lugaresSelected;
-
-    private List<Lugar> lugaresSelected2;
-
-    private List<Producto> productosData;
-
-    private List<Producto> chartProductosData;
-
-    private List<Producto> filtroProductos;
-
-    private List<Lugar> filtroLugares;
-
-    private List<Lugar> filtroLugares2;
-
+    // PRODUCTO
     private Producto selectedProducto;
-
     private Producto selectedLazyProducto;
 
-    private List<Producto> selectedProductos;
+    // CATEGORIA
+    private int idSelectedCategoria; // ESTABLECIDO EN EL DIALOG DEL CRUD
+    private int searchCategoria; // ESTABLECIDO EN EL FILTRO DE SELECCIÓN
+    private int selected; // 
+    private int anteriorCategoria; // eliminar
 
+    // FECHAS
+    private Date today;
     private Date rangoInicio;
-
     private Date rangoFin;
+    private Date minDate;
+    private Date rangoInicioAnterior;
+    private Date rangoFinAnterior;
 
-    private int idSelectedCategoria;
-
-    private int searchCategoria;
-
-    private boolean nuevo = false;
-
-    private boolean show = false;
-
+    // CHARTS
     private LineChartModel lineModel;
-
     private DonutChartModel donutModel;
-
     private BarChartModel barModel;
 
-    private Date minDate;
+    // LISTAS PRODUCTOS
+    private List<Producto> productos;
+    private List<Producto> productosData;
+    private List<Producto> filtroProductos;
+    private List<Producto> chartProductosData;
+    private List<Producto> selectedProductos;
 
-    private Date minSearchDate;
+    // LISTAS LUGARES
+    private List<Lugar> lugares;
+    private List<Lugar> lugaresSelected;
+    private List<Lugar> lugaresSelected2;
+    private List<Lugar> filtroLugares;
+    private List<Lugar> filtroLugares2;
 
-    private Date today;
+    // LISTAS CATEGORÍAS
+    private List<Categoria> categorias;
 
-    private int selected;
-
-    private boolean filtrado = false;
-
+    // LAZY
     private LazyProductosDataModel lazyModel;
 
-    private int activeIndex;
-
+    // BOOLEANOS DE COMPROBACIÓN
+    private boolean nuevo = false;
+    private boolean show = false;
+    private boolean filtrado = false;
+    
+    // ÚTILES
+    Random random = new Random();
     private UploadedFile archivoSubido;
-
-    private int anteriorCategoria;
-
-    private Date rangoInicioAnterior;
-
-    private Date rangoFinAnterior;
+    private int activeIndex;
 
     // INIT
     //
@@ -442,14 +428,6 @@ public class Main {
 
     public void setLugaresSelected2(List<Lugar> lugaresSelected2) {
         this.lugaresSelected2 = lugaresSelected2;
-    }
-
-    public Date getMinSearchDate() {
-        return minSearchDate;
-    }
-
-    public void setMinSearchDate(Date minSearchDate) {
-        this.minSearchDate = minSearchDate;
     }
 
     public Date getToday() {
@@ -991,29 +969,57 @@ public class Main {
         try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Sheet sheet = workbook.createSheet("Productos");
-            Row headerRow = sheet.createRow(0);
 
             String[] headers = {"Código", "Nombre", "Descripción", "Categoría", "Precio", "Fecha de Lanzamiento", "Stock"};
 
-            for (int i = 0; i < headers.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
-            }
-
             XSSFCellStyle estiloCelda = workbook.createCellStyle();
-
             XSSFColor gris = new XSSFColor(new java.awt.Color(223, 223, 223));
-
             estiloCelda.setFillForegroundColor(gris);
             estiloCelda.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            for (int i = 0; i < headers.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
-                cell.setCellStyle(estiloCelda);
+            int rowNum = 1;
+
+            if (productosData.size() != filtroProductos.size()) {
+
+                Row filtersRow = sheet.createRow(0);
+                List<String> filters = new ArrayList<>();
+
+                if (searchCategoria != -1) {
+                    filters.add("Categoría: " + categorias.get(searchCategoria - 1).getNombre());
+                }
+                if (rangoInicio != null && rangoFin != null) {
+                    filters.add("Fecha inicio: " + formatDate(rangoInicio) + " Fecha fin: " + formatDate(rangoFin));
+                } else if (rangoInicio != null) {
+                    filters.add("Filtro inicio: " + formatDate(rangoInicio));
+                } else if (rangoFin != null) {
+                    filters.add("Filtro fin: " + formatDate(rangoFin));
+                }
+
+                for (int i = 0; i < filters.size(); i++) {
+                    Cell cell = filtersRow.createCell(i);
+                    cell.setCellValue(filters.get(i));
+                }
+
+                Row headerRow = sheet.createRow(2);
+
+                rowNum = 3;
+
+                for (int i = 0; i < headers.length; i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                    cell.setCellStyle(estiloCelda);
+                }
+
+            } else {
+                Row headerRow = sheet.createRow(0);
+
+                for (int i = 0; i < headers.length; i++) {
+                    Cell cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                    cell.setCellStyle(estiloCelda);
+                }
             }
 
-            int rowNum = 1;
             for (Producto producto : this.filtroProductos) {
                 Row row = sheet.createRow(rowNum++);
 
@@ -1033,6 +1039,10 @@ public class Main {
 
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.setAutoFilter(new CellRangeAddress(0, rowNum, i, i));
             }
 
             workbook.write(out);

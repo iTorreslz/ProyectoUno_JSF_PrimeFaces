@@ -5,6 +5,9 @@
 
     <h:head>
         <title>Productos</title>
+
+        <!-- ESTILOS -->
+
         <style>
             .no-stock {
                 background-color: #ff0038 !important;
@@ -22,16 +25,18 @@
 
     <h:body>
 
-        <!-- Growl -->
+        <!-- GROWL -->
 
         <p:growl id="growl" showDetail="true" />
 
-        <!-- Formulario principal -->
+        <!-- FORM 01: PRINCIPAL -->
 
         <h:form id="mainForm">
 
             <p:toolbar>
                 <p:toolbarGroup>
+
+                    <!-- CRUD -->
 
                     <p:commandButton icon="pi pi-plus" styleClass="ui-button-success" style="margin-right: .5rem" actionListener="#{Main.openNew()}" update=":dialogs:manage-product-content"
                                      oncomplete="PF('manageProductDialog').show()" disabled="#{Main.productosData.size() == 0}">
@@ -44,6 +49,8 @@
                         <p:confirm header="Confirmación" message="¿Deseas borrar los productos seleccionados?"
                                    icon="pi pi-exclamation-triangle"/>
                     </p:commandButton>
+
+                    <!-- EXCEL -->
 
                     <p:fileUpload mode="simple" label="Añadir desde Excel" update="growl mainForm:j_idt7 mainForm:tabView" skinSimple="true" auto="true"
                                   listener="#{Main.fileUpload}" style="margin-right: .1rem" disabled="#{Main.filtroProductos.size() == 0 and Main.activeIndex == 0 or Main.chartProductosData.size() == 0 and Main.activeIndex == 1
@@ -64,6 +71,9 @@
                 </p:toolbarGroup>
 
                 <p:toolbarGroup align="right">
+
+                    <!-- FILTROS DE FECHA / CATEGORÍA -->
+
                     <p:outputLabel for="searchFecha1" style="margin-right: .5rem">Desde</p:outputLabel>
                     <p:datePicker id="searchFecha1" value="#{Main.rangoInicio}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem"
                                   maxdate="#{Main.rangoFin != null ? Main.rangoFin : Main.today}" pattern="dd/MM/yyyy">
@@ -84,6 +94,8 @@
                         <!--                        <p:ajax event="change" update="mainForm" />-->
                     </p:selectOneMenu>
 
+                    <!-- BUSCAR -->
+
                     <p:commandButton icon="pi pi-search" styleClass="ui-button-success" actionListener="#{Main.rellenarTabla}" update="mainForm:tabView mainForm:j_idt7"
                                      onclick="cambiarToggler();"/>
                 </p:toolbarGroup>
@@ -92,11 +104,15 @@
 
             <p:tabView id="tabView" widgetVar="tabView" dynamic="true" activeIndex="#{Main.activeIndex}">
 
+                <!-- EVENTOS AJAX -->
+
                 <p:ajax event="tabChange" update="mainForm:j_idt7"/>
+
+                <!-- TAB 01 -->
 
                 <p:tab title="General">
 
-                    <!-- Tabla de productos -->
+                    <!-- TABLA DE PRODUCTOS -->
 
                     <!--                    <p:remoteCommand name="updateChart" action="" update="mainForm"/>-->
 
@@ -104,7 +120,7 @@
                                  selection="#{Main.selectedProducto}" selectionMode="single" rowStyleClass="#{producto.stock ? (producto.precio > 100.0 ? 'caro' : null) : 'no-stock'}"
                                  filteredValue="#{Main.filtroProductos}" draggableRows="true">
 
-                        <!-- Eventos AJAX -->
+                        <!-- EVENTOS AJAX -->
 
                         <p:ajax event="rowReorder" listener="#{Main.onRowReorder}" update="mainForm growl"/>
                         <p:ajax event="rowSelectCheckbox" update="mainForm"/>
@@ -116,6 +132,8 @@
                         <p:column headerText="Posición" sortBy="#{producto.posicion}" width="40px">
                             <h:outputText value="#{producto.posicion + 1}" />
                         </p:column>
+
+                        <!-- CRUD -->
 
                         <p:column style="text-align: center" width="88px" exportable="false">
 
@@ -131,6 +149,8 @@
                             </p:commandButton>
 
                         </p:column>
+
+                        <!-- ROW-TOGGLER -->
 
                         <p:column style="width:2rem">
                             <p:rowToggler rendered="#{producto.stock}"/>
@@ -177,6 +197,8 @@
                             <p:selectBooleanCheckbox value="#{producto.stock}" disabled="true"/>
                         </p:column>
 
+                        <!-- ROW EXPANSION: TABLA DE LUGARES -->
+
                         <p:rowExpansion>
                             <p:dataTable var="lugar" id="dtLugaresExp" widgetVar="dtLugaresExp" value="#{producto.lugares}" filteredValue="#{Main.filtroLugares2}">
 
@@ -197,6 +219,8 @@
                             </p:dataTable>
                         </p:rowExpansion>
 
+                        <!-- COLUMN GROUP: SUMA DE PRECIO TOTAL -->
+
                         <p:columnGroup type="footer">
                             <p:row>
                                 <p:column colspan="7" style="text-align:right" footerText="Total Precio:"/>
@@ -213,7 +237,8 @@
 
                     </p:dataTable>
 
-                    <!-- Tabla de lugares -->
+                    <!-- TABLA DE LUGARES -->
+
                     <h:panelGroup id="tblLugar"> 
                         <p:dataTable var="lugar" id="dtLugares" widgetVar="dtLugares" value="#{Main.lugaresSelected}"
                                      rendered="#{Main.selectedProducto ne null and Main.selectedProducto.stock}" filteredValue="#{Main.filtroLugares}">
@@ -235,7 +260,7 @@
                         </p:dataTable>
                     </h:panelGroup>
 
-                    <!-- Lazy Table -->
+                    <!-- TABLA LAZY (DISABLED) -->
 
                     <p:dataTable var="productoLazy" value="#{Main.lazyModel}" lazy="true" id="lazyTable" virtualScroll="true" scrollRows="20"
                                  scrollHeight="500" scrollable="true" rendered="false">
@@ -276,12 +301,13 @@
                         </p:column>
 
                     </p:dataTable>
-
                 </p:tab>
+
+                <!-- TAB DE CHARTS DE PRECIO DE PRODUCTO -->
 
                 <p:tab id="chartsTab" title="Charts">
 
-                    <!-- Bar Charts -->
+                    <!-- LINE - DONUT - BAR -->
 
                     <p:lineChart id="chart" widgetVar="chart" model="#{Main.lineModel}" style="width: 100%; height: 500px;" rendered="#{Main.chartProductosData.size() > 0}"/>
 
@@ -295,11 +321,11 @@
 
         </h:form>
 
-        <!-- Form de diálogos -->
+        <!-- FORM 02: DIÁLOGOS -->
 
         <h:form id="dialogs">
 
-            <!-- Diálogo de creación/edición de producto -->
+            <!-- DIALOG DE CRUD DE PRODUCTO -->
 
             <p:dialog header="Detalle del producto" showEffect="fade" modal="true" widgetVar="manageProductDialog" responsive="true">
 
@@ -346,6 +372,8 @@
                         <p:selectBooleanCheckbox id="stock" value="#{Main.selectedProducto.stock}" itemLabel="Stock" disabled="#{Main.show}"/>
                     </div>
 
+                    <!-- BOTONES: GUARDAR / SALIR -->
+
                     <div class="field" style="margin-top: 10px">
                         <p:commandButton value="Guardar" icon="pi pi-check" actionListener="#{Main.saveProduct}" rendered="#{!Main.show}"
                                          update="mainForm:tabView growl" process="manage-product-content" />
@@ -355,7 +383,7 @@
                 </p:outputPanel>
             </p:dialog>
 
-            <!-- Confirm Dialog -->
+            <!-- CONFIRM DIALOG -->
 
             <p:confirmDialog widgetVar="deleteProductDialog" showEffect="fade" width="300" global="true" responsive="true">
                 <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no ui-button-flat"/>
@@ -364,12 +392,14 @@
 
         </h:form>
 
-        <!-- Item draggable -->
+        <!-- ITEM DRAGGABLE -->
 
         <p:panel id="drag" header="RECORDATORIOS" style="width: fit-content;">
             <h:outputText value="Recordatorio número 1."/>
         </p:panel>
         <p:draggable for="drag" onStop="guardarPosicion()"/>
+
+        <!-- SCRIPTS DE LA APLICACIÓN -->
 
         <script>
 
