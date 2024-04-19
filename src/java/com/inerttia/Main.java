@@ -3,9 +3,16 @@ package com.inerttia;
 import com.inerttia.clases.Categoria;
 import com.inerttia.clases.Lugar;
 import com.inerttia.clases.Producto;
+import static com.sun.faces.el.FacesCompositeELResolver.ELResolverChainType.Faces;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
@@ -17,10 +24,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import javax.annotation.PostConstruct;
 import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
+import javax.faces.component.UIViewRoot;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.servlet.http.HttpServletResponse;
@@ -37,12 +47,17 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.primefaces.PrimeFaces;
+import org.primefaces.component.datatable.DataTable;
+import org.primefaces.component.export.DataExporter;
 import org.primefaces.event.FileUploadEvent;
 import org.primefaces.event.ReorderEvent;
+import org.primefaces.model.DefaultStreamedContent;
+import org.primefaces.model.StreamedContent;
 import org.primefaces.model.charts.ChartData;
 import org.primefaces.model.charts.axes.cartesian.CartesianScales;
 import org.primefaces.model.charts.axes.cartesian.linear.CartesianLinearAxes;
@@ -1186,8 +1201,59 @@ public class Main {
         }
     }
 
-    // TO DO EXPORT ALL
-    
+    public void exportarProductosZip() {
+        exportarProductos();
+        exportarPDF();
+        combinarArchivos();
+    }
+
+    public void exportarPDF() {
+        // TO DO
+    }
+
+    public StreamedContent getArchivoZip() {
+        File archivoZip = generarArchivoZip();
+        final InputStream inputStream;
+        try {
+            inputStream = new FileInputStream(archivoZip);
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+        return DefaultStreamedContent.builder()
+                .name("productos.zip")
+                .contentType("application/zip")
+                .stream(() -> inputStream)
+                .build();
+    }
+
+    // CREA UN ARCHIVO .ZIP CONTENEDOR DE DOS ARCHIVOS, .XLSX Y .PDF
+    private File generarArchivoZip() {
+        List<File> archivos = new ArrayList<>();
+        archivos.add(new File("ruta/del/archivo/xlsx"));
+        archivos.add(new File("ruta/del/archivo/pdf"));
+
+        File archivoZip = new File("productos.zip");
+
+        try (FileOutputStream fos = new FileOutputStream(archivoZip); ZipOutputStream zos = new ZipOutputStream(fos)) {
+
+            for (File archivo : archivos) {
+                ZipEntry zipEntry = new ZipEntry(archivo.getName());
+                zos.putNextEntry(zipEntry);
+
+                byte[] bytes = Files.readAllBytes(archivo.toPath());
+                zos.write(bytes, 0, bytes.length);
+                zos.closeEntry();
+            }
+        } catch (IOException e) {
+        }
+
+        return archivoZip;
+    }
+
+    private void combinarArchivos() {
+        // Lógica para combinar los archivos XLSX y PDF en un archivo ZIP
+    }
+
     // GESTIONA LA CREACIÓN U OCULTACIÓN DE LA TABLA DE LUGARES DE LOS PRODUCTOS
     public void gestionTablaLugares() {
 

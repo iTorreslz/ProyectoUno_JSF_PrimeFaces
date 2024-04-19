@@ -63,11 +63,14 @@
                                      actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true">
                     </p:commandButton>
 
-                    <p:commandButton value="PDF (PrimeFaces)" rendered="#{Main.activeIndex eq 0 and Main.filtroProductos.size() gt 0}">
+                    <p:commandButton value="PDF (PrimeFaces)" rendered="#{Main.activeIndex eq 0 and Main.filtroProductos.size() gt 0}" style="margin-right: .1rem">
                         <p:dataExporter type="pdf" target="mainForm:tabView:dtProducts" fileName="productos"/>
                     </p:commandButton>
-                    
-                    <!-- TO DO -->
+
+                    <p:commandButton value="XLSX y PDF" action="#{Main.exportarProductos()}" rendered="#{Main.activeIndex eq 0 and Main.filtroProductos.size() gt 0}"
+                                     ajax="false">
+                        <p:fileDownload value="#{Main.archivoZip}" />
+                    </p:commandButton>
 
                 </p:toolbarGroup>
 
