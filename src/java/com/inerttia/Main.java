@@ -6,6 +6,8 @@ import com.inerttia.clases.Producto;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,8 +26,13 @@ import javax.faces.context.FacesContext;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import static org.apache.poi.ss.usermodel.CellType.NUMERIC;
+import static org.apache.poi.ss.usermodel.CellType.STRING;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -36,7 +43,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.primefaces.PrimeFaces;
 import org.primefaces.event.FileUploadEvent;
 import org.primefaces.event.ReorderEvent;
-import org.primefaces.event.SelectEvent;
 import org.primefaces.model.charts.ChartData;
 import org.primefaces.model.charts.axes.cartesian.CartesianScales;
 import org.primefaces.model.charts.axes.cartesian.linear.CartesianLinearAxes;
@@ -62,7 +68,9 @@ import org.primefaces.model.file.UploadedFile;
 @ViewScoped
 public class Main {
 
-    // VARIABLES
+    //------------------------------------------------------------------------//
+    //                               VARIABLES                                //
+    //------------------------------------------------------------------------//
     //
     // PRODUCTO
     private Producto selectedProducto;
@@ -70,7 +78,6 @@ public class Main {
 
     // CATEGORIA
     private int idSelectedCategoria; // ESTABLECIDO EN EL DIALOG DEL CRUD
-    private int searchCategoria; // ESTABLECIDO EN EL FILTRO DE SELECCIÓN
     private int selected; // 
     private int anteriorCategoria; // eliminar
 
@@ -103,44 +110,61 @@ public class Main {
 
     // LISTAS CATEGORÍAS
     private List<Categoria> categorias;
+    private List<Integer> categoriasSearch;
 
     // LAZY
     private LazyProductosDataModel lazyModel;
+
+    // FILTROS
+    private String filtroNombre;
+    private String descripcion;
+    private String fechaLanz;
 
     // BOOLEANOS DE COMPROBACIÓN
     private boolean nuevo = false;
     private boolean show = false;
     private boolean filtrado = false;
-    
+
     // ÚTILES
     Random random = new Random();
     private UploadedFile archivoSubido;
     private int activeIndex;
 
-    // INIT
+    //------------------------------------------------------------------------//
+    //                                  INIT                                  //
+    //------------------------------------------------------------------------//
     //
     @PostConstruct
     public void init() {
 
-        // Variables del INIT
-        selectedProductos = new ArrayList<>();
-        productos = new ArrayList<>();
-        filtroProductos = new ArrayList<>();
-        categorias = new ArrayList<>();
-        lugares = new ArrayList<>();
-        lugaresSelected = new ArrayList<>();
-        productosData = new ArrayList<>();
-        chartProductosData = new ArrayList<>();
-        minDate = new Date();
-        today = new Date();
+        // VARIABLES DEL INIT
         selected = -1;
 
-        // Conjunto de fechas  para usarlas en los objetos de prueba
+        today = new Date();
+        minDate = new Date();
+
+        productos = new ArrayList<>();
+        productosData = new ArrayList<>();
+        filtroProductos = new ArrayList<>();
+        chartProductosData = new ArrayList<>();
+        selectedProductos = new ArrayList<>();
+
+        lugares = new ArrayList<>();
+        lugaresSelected = new ArrayList<>();
+
+        categorias = new ArrayList<>();
+
+        //------------------------------------------------------------------------//
+        //                     CREACIÓN DE PRODUCTOS DE PRUEBA                    //
+        //------------------------------------------------------------------------//
+        //
+        // FECHAS PARA PRODUCTOS DE PRUEBA
         String fechaString1 = "12/01/2024", fechaString2 = "20/02/2024", fechaString3 = "25/03/2023", fechaString4 = "01/04/2024",
                 fechaString5 = "05/06/2014", fechaString6 = "18/10/2023";
 
-        // Transformación de String a Date, con SimpleDateFormat, de las 6 fechas
+        // TRANSFORMACIÓN DE STRING A DATE, USANDO SimpleDateFormat
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+
         Date fecha1 = null;
         try {
             fecha1 = sdf.parse(fechaString1);
@@ -178,12 +202,12 @@ public class Main {
             System.out.println("Error");
         }
 
-        // Creación de las categorías para los productos
+        // CREACIÓN DE CATEGORÍAS
         categorias.add(new Categoria(1, "Gama alta"));
         categorias.add(new Categoria(2, "Gama media"));
         categorias.add(new Categoria(3, "Gama baja"));
 
-        // Creación de lugares para los productos
+        // CREACIÓN DE LUGARES
         lugares.add(new Lugar(1, "Málaga", "España"));
         lugares.add(new Lugar(2, "Madrid", "España"));
         lugares.add(new Lugar(3, "Donostia", "España"));
@@ -195,7 +219,7 @@ public class Main {
         lugares.add(new Lugar(9, "Tokyo", "Japón"));
         lugares.add(new Lugar(10, "Osaka", "Japón"));
 
-        // Creación de nuevos productos y adición a la Lista de Productos
+        // CREACIÓN DE PRODUCTOS
         productos.add(new Producto(1, "Televisor Inerttia", "Descripción amplia y muy detallada sobre el Televisor Inerttia lorem ipsum lorem ipsum lorem ipsum",
                 categorias.get(1), 1249.99, fecha1, false, new ArrayList<>(), 0));
         productos.add(new Producto(2, "Smartphone Inerttia", "Descripción amplia y muy detallada sobre el Smartphone Inerttia lorem ipsum lorem ipsum lorem ipsum",
@@ -209,7 +233,7 @@ public class Main {
         productos.add(new Producto(6, "Smartwatch Inerttia", "Descripción amplia y muy detallada sobre el Smartwatch Inerttia lorem ipsum lorem ipsum lorem ipsum",
                 categorias.get(1), 169.99, fecha6, true, new ArrayList<>(), 5));
 
-        // Añadimos los lugares de forma aleatoria, ya que estamos probando
+        // AÑADIMOS LUGARES DE FORMA ALEATORIA A LOS PRODUCTOS
         for (Producto producto : productos) {
 
             if (producto.isStock()) {
@@ -244,72 +268,19 @@ public class Main {
             }
         }
 
+        // INICIALIZACIÓN DE LAZYMODEL
         lazyModel = new LazyProductosDataModel(productos);
 
-        // Creación de los Chart vacíos, sin campos en la tabla
+        // CREACIÓN DE CHARTS (VACÍOS)
         createLineModel();
         createDonutModel();
         createBarModel();
     }
 
-    // GETTERS Y SETTERS
+    //------------------------------------------------------------------------//
+    //                           GETTERS Y SETTERS                            //
+    //------------------------------------------------------------------------//
     //
-    public List<Producto> getProductosData() {
-        return productosData;
-    }
-
-    public void setProductosData(List<Producto> productosData) {
-        this.productosData = productosData;
-    }
-
-    public List<Producto> getChartProductosData() {
-        return chartProductosData;
-    }
-
-    public void setChartProductosData(List<Producto> chartProductosData) {
-        this.chartProductosData = chartProductosData;
-    }
-
-    public List<Producto> getFiltroProductos() {
-        return filtroProductos;
-    }
-
-    public void setFiltroProductos(List<Producto> filtroProductos) {
-        this.filtroProductos = filtroProductos;
-    }
-
-    public List<Lugar> getFiltroLugares() {
-        return filtroLugares;
-    }
-
-    public void setFiltroLugares(List<Lugar> filtroLugares) {
-        this.filtroLugares = filtroLugares;
-    }
-
-    public List<Lugar> getFiltroLugares2() {
-        return filtroLugares2;
-    }
-
-    public void setFiltroLugares2(List<Lugar> filtroLugares2) {
-        this.filtroLugares2 = filtroLugares2;
-    }
-
-    public List<Producto> getProductos() {
-        return productos;
-    }
-
-    public void setProductos(List<Producto> productos) {
-        this.productos = productos;
-    }
-
-    public List<Categoria> getCategorias() {
-        return categorias;
-    }
-
-    public void setCategorias(List<Categoria> categorias) {
-        this.categorias = categorias;
-    }
-
     public Producto getSelectedProducto() {
         return selectedProducto;
     }
@@ -318,12 +289,44 @@ public class Main {
         this.selectedProducto = selectedProducto;
     }
 
-    public List<Producto> getSelectedProductos() {
-        return selectedProductos;
+    public Producto getSelectedLazyProducto() {
+        return selectedLazyProducto;
     }
 
-    public void setSelectedProductos(List<Producto> selectedProductos) {
-        this.selectedProductos = selectedProductos;
+    public void setSelectedLazyProducto(Producto selectedLazyProducto) {
+        this.selectedLazyProducto = selectedLazyProducto;
+    }
+
+    public int getIdSelectedCategoria() {
+        return idSelectedCategoria;
+    }
+
+    public void setIdSelectedCategoria(int idSelectedCategoria) {
+        this.idSelectedCategoria = idSelectedCategoria;
+    }
+
+    public int getSelected() {
+        return selected;
+    }
+
+    public void setSelected(int selected) {
+        this.selected = selected;
+    }
+
+    public int getAnteriorCategoria() {
+        return anteriorCategoria;
+    }
+
+    public void setAnteriorCategoria(int anteriorCategoria) {
+        this.anteriorCategoria = anteriorCategoria;
+    }
+
+    public Date getToday() {
+        return today;
+    }
+
+    public void setToday(Date today) {
+        this.today = today;
     }
 
     public Date getRangoInicio() {
@@ -342,28 +345,28 @@ public class Main {
         this.rangoFin = rangoFin;
     }
 
-    public boolean isNuevo() {
-        return nuevo;
+    public Date getMinDate() {
+        return minDate;
     }
 
-    public void setNuevo(boolean nuevo) {
-        this.nuevo = nuevo;
+    public void setMinDate(Date minDate) {
+        this.minDate = minDate;
     }
 
-    public boolean isShow() {
-        return show;
+    public Date getRangoInicioAnterior() {
+        return rangoInicioAnterior;
     }
 
-    public void setShow(boolean show) {
-        this.show = show;
+    public void setRangoInicioAnterior(Date rangoInicioAnterior) {
+        this.rangoInicioAnterior = rangoInicioAnterior;
     }
 
-    public int getIdSelectedCategoria() {
-        return idSelectedCategoria;
+    public Date getRangoFinAnterior() {
+        return rangoFinAnterior;
     }
 
-    public void setIdSelectedCategoria(int idSelectedCategoria) {
-        this.idSelectedCategoria = idSelectedCategoria;
+    public void setRangoFinAnterior(Date rangoFinAnterior) {
+        this.rangoFinAnterior = rangoFinAnterior;
     }
 
     public LineChartModel getLineModel() {
@@ -390,20 +393,44 @@ public class Main {
         this.barModel = barModel;
     }
 
-    public Date getMinDate() {
-        return minDate;
+    public List<Producto> getProductos() {
+        return productos;
     }
 
-    public void setMinDate(Date minDate) {
-        this.minDate = minDate;
+    public void setProductos(List<Producto> productos) {
+        this.productos = productos;
     }
 
-    public Random getRandom() {
-        return random;
+    public List<Producto> getProductosData() {
+        return productosData;
     }
 
-    public void setRandom(Random random) {
-        this.random = random;
+    public void setProductosData(List<Producto> productosData) {
+        this.productosData = productosData;
+    }
+
+    public List<Producto> getFiltroProductos() {
+        return filtroProductos;
+    }
+
+    public void setFiltroProductos(List<Producto> filtroProductos) {
+        this.filtroProductos = filtroProductos;
+    }
+
+    public List<Producto> getChartProductosData() {
+        return chartProductosData;
+    }
+
+    public void setChartProductosData(List<Producto> chartProductosData) {
+        this.chartProductosData = chartProductosData;
+    }
+
+    public List<Producto> getSelectedProductos() {
+        return selectedProductos;
+    }
+
+    public void setSelectedProductos(List<Producto> selectedProductos) {
+        this.selectedProductos = selectedProductos;
     }
 
     public List<Lugar> getLugares() {
@@ -430,28 +457,36 @@ public class Main {
         this.lugaresSelected2 = lugaresSelected2;
     }
 
-    public Date getToday() {
-        return today;
+    public List<Lugar> getFiltroLugares() {
+        return filtroLugares;
     }
 
-    public void setToday(Date today) {
-        this.today = today;
+    public void setFiltroLugares(List<Lugar> filtroLugares) {
+        this.filtroLugares = filtroLugares;
     }
 
-    public int getSelected() {
-        return selected;
+    public List<Lugar> getFiltroLugares2() {
+        return filtroLugares2;
     }
 
-    public void setSelected(int selected) {
-        this.selected = selected;
+    public void setFiltroLugares2(List<Lugar> filtroLugares2) {
+        this.filtroLugares2 = filtroLugares2;
     }
 
-    public boolean isFiltrado() {
-        return filtrado;
+    public List<Categoria> getCategorias() {
+        return categorias;
     }
 
-    public void setFiltrado(boolean filtrado) {
-        this.filtrado = filtrado;
+    public void setCategorias(List<Categoria> categorias) {
+        this.categorias = categorias;
+    }
+
+    public List<Integer> getCategoriasSearch() {
+        return categoriasSearch;
+    }
+
+    public void setCategoriasSearch(List<Integer> categoriasSearch) {
+        this.categoriasSearch = categoriasSearch;
     }
 
     public LazyProductosDataModel getLazyModel() {
@@ -462,20 +497,60 @@ public class Main {
         this.lazyModel = lazyModel;
     }
 
-    public Producto getSelectedLazyProducto() {
-        return selectedLazyProducto;
+    public String getFiltroNombre() {
+        return filtroNombre;
     }
 
-    public void setSelectedLazyProducto(Producto selectedLazyProducto) {
-        this.selectedLazyProducto = selectedLazyProducto;
+    public void setFiltroNombre(String filtroNombre) {
+        this.filtroNombre = filtroNombre;
     }
 
-    public int getActiveIndex() {
-        return activeIndex;
+    public String getDescripcion() {
+        return descripcion;
     }
 
-    public void setActiveIndex(int activeIndex) {
-        this.activeIndex = activeIndex;
+    public void setDescripcion(String descripción) {
+        this.descripcion = descripcion;
+    }
+
+    public String getFechaLanz() {
+        return fechaLanz;
+    }
+
+    public void setFechaLanz(String fechaLanz) {
+        this.fechaLanz = fechaLanz;
+    }
+
+    public boolean isNuevo() {
+        return nuevo;
+    }
+
+    public void setNuevo(boolean nuevo) {
+        this.nuevo = nuevo;
+    }
+
+    public boolean isShow() {
+        return show;
+    }
+
+    public void setShow(boolean show) {
+        this.show = show;
+    }
+
+    public boolean isFiltrado() {
+        return filtrado;
+    }
+
+    public void setFiltrado(boolean filtrado) {
+        this.filtrado = filtrado;
+    }
+
+    public Random getRandom() {
+        return random;
+    }
+
+    public void setRandom(Random random) {
+        this.random = random;
     }
 
     public UploadedFile getArchivoSubido() {
@@ -486,41 +561,19 @@ public class Main {
         this.archivoSubido = archivoSubido;
     }
 
-    public int getAnteriorCategoria() {
-        return anteriorCategoria;
+    public int getActiveIndex() {
+        return activeIndex;
     }
 
-    public void setAnteriorCategoria(int anteriorCategoria) {
-        this.anteriorCategoria = anteriorCategoria;
+    public void setActiveIndex(int activeIndex) {
+        this.activeIndex = activeIndex;
     }
 
-    public Date getRangoInicioAnterior() {
-        return rangoInicioAnterior;
-    }
-
-    public void setRangoInicioAnterior(Date rangoInicioAnterior) {
-        this.rangoInicioAnterior = rangoInicioAnterior;
-    }
-
-    public Date getRangoFinAnterior() {
-        return rangoFinAnterior;
-    }
-
-    public void setRangoFinAnterior(Date rangoFinAnterior) {
-        this.rangoFinAnterior = rangoFinAnterior;
-    }
-
-    public int getSearchCategoria() {
-        return searchCategoria;
-    }
-
-    public void setSearchCategoria(int searchCategoria) {
-        this.searchCategoria = searchCategoria;
-    }
-
-    // ===============================================================================
-    // MÉTODOS DEL BEAN
+    //------------------------------------------------------------------------//
+    //                           MÉTODOS DEL BEAN                             //
+    //------------------------------------------------------------------------//
     //
+    // FORMATEA UNA FECHA A "dd/MM/yyyy"
     public String formatDate(Date fecha) {
         if (fecha != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
@@ -530,6 +583,7 @@ public class Main {
         return null;
     }
 
+    // MUESTRA UNA TABLA DE PRODUCTOS (CRUD)
     public void rellenarTabla() {
 
         if (this.activeIndex == 0) {
@@ -545,18 +599,14 @@ public class Main {
             this.productosData.add(prod);
         }
 
-        if (this.searchCategoria != -1) {
-            for (Producto prod : productos) {
-                if (prod.getCategoria().getId() == this.searchCategoria) {
-                    if (this.activeIndex == 0) {
-                        this.filtroProductos.add(prod);
-                    } else {
-                        this.chartProductosData.add(prod);
-                    }
+        for (Producto prod : productos) {
+            if (this.categoriasSearch.contains(prod.getCategoria().getId())) {
+                if (this.activeIndex == 0) {
+                    this.filtroProductos.add(prod);
+                } else {
+                    this.chartProductosData.add(prod);
                 }
-            }
-        } else {
-            for (Producto prod : productos) {
+            } else if (this.categoriasSearch.isEmpty()) {
                 if (this.activeIndex == 0) {
                     this.filtroProductos.add(prod);
                 } else {
@@ -615,18 +665,20 @@ public class Main {
 
         this.rangoInicioAnterior = this.rangoInicio;
         this.rangoFinAnterior = this.rangoFin;
-        this.anteriorCategoria = this.searchCategoria;
     }
 
+    // COMPRUEBA SI HAY PRODUCTOS SELECCIONADOS CON CHECKBOX
     public boolean hasSelectedProductos() {
         return this.selectedProductos != null && !this.selectedProductos.isEmpty();
     }
 
+    // SE INICIA CON LA CREACIÓN DE UN NUEVO PRODUCTO (CRUD)
     public void openNew() {
         this.idSelectedCategoria = 1;
         editProduct(new Producto(), false, true);
     }
 
+    // SE INICIA CON LA EDICIÓN DE UN PRODUCTO EXISTENTE (CRUD)
     public void editProduct(Producto selectedProducto, boolean justShow, boolean isNew) {
         this.selectedProducto = selectedProducto;
 
@@ -644,6 +696,7 @@ public class Main {
         }
     }
 
+    // VALIDA LOS CAMPOS EN LA CREACIÓN / EDICIÓN DE UN PRODUCTO
     public String validation(Producto producto) {
         if (producto.getNombre().isEmpty() || producto.getDescripcion().length() < 10) {
             if (producto.getNombre().isEmpty() && producto.getDescripcion().length() < 10) {
@@ -658,6 +711,7 @@ public class Main {
         }
     }
 
+    // GUARDA UN PRODUCTO CREADO / EDITADO SI ESTÁ TODO CORRECTO
     public void saveProduct() {
 
         switch (this.idSelectedCategoria) {
@@ -694,11 +748,12 @@ public class Main {
                         this.productosData.add(this.selectedProducto);
                         if (this.activeIndex == 0) {
 
-                            if (selectedProducto.getCategoria().getId() == this.searchCategoria) {
+                            if (this.categoriasSearch.contains(selectedProducto.getCategoria().getId())) {
                                 this.filtroProductos.add(this.selectedProducto);
-                            } else if (this.searchCategoria == -1) {
+                            } else if (this.categoriasSearch.isEmpty()) {
                                 this.filtroProductos.add(this.selectedProducto);
                             }
+
                         } else if (this.activeIndex == 1) {
                             this.chartProductosData.add(this.selectedProducto);
                         }
@@ -734,9 +789,7 @@ public class Main {
         } else {
             switch (validation(this.selectedProducto)) {
                 case "correcto":
-                    if (this.searchCategoria != this.idSelectedCategoria) {
-                        rellenarTabla();
-                    }
+                    rellenarTabla();
                     FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Producto Actualizado", ""));
                     PrimeFaces.current().executeScript("PF('manageProductDialog').hide()");
                     break;
@@ -761,6 +814,7 @@ public class Main {
         }
     }
 
+    // COMPLETA UN MENSAJE POR PANTALLA
     public String getDeleteButtonMessage() {
         if (hasSelectedProductos()) {
             int size = this.selectedProductos.size();
@@ -770,6 +824,7 @@ public class Main {
         return null;
     }
 
+    // ELIMINA UN PRODUCTO (CRUD)
     public void eliminarProducto(Producto p) {
         this.filtroProductos.remove(p);
         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Producto Eliminado", ""));
@@ -782,19 +837,21 @@ public class Main {
         }
     }
 
+    // ELIMINA MÚLTIPLES PRODUCTOS SELECCIONADOS CON CHECKBOX (CRUD)
     public void eliminarSelectedProductos() {
         this.productosData.removeAll(this.selectedProductos);
         this.selectedProductos = null;
         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Productos eliminados"));
 
         if (this.activeIndex == 1) {
-            // Creación de nuevo del Chart
+            // Creación de nuevo de los Chart
             createLineModel();
             createDonutModel();
             createBarModel();
         }
     }
 
+    // CREACIÓN DEL LINE CHART
     public void createLineModel() {
 
         lineModel = new LineChartModel();
@@ -842,6 +899,7 @@ public class Main {
 
     }
 
+    // CREACIÓN DEL DONUT CHART
     public void createDonutModel() {
         donutModel = new DonutChartModel();
         ChartData data = new ChartData();
@@ -879,6 +937,7 @@ public class Main {
         donutModel.setData(data);
     }
 
+    // CREACIÓN DEL BAR CHART
     public void createBarModel() {
         barModel = new BarChartModel();
         ChartData data = new ChartData();
@@ -961,38 +1020,64 @@ public class Main {
         barModel.setOptions(options);
     }
 
+    // FORMATEA EL STOCK CAMBIANDO TRUE POR "SÍ" Y FALSE POR "NO"
     public String exportStock(boolean stock) {
         return stock ? "sí" : "no";
     }
 
+    // EXPORTA LOS PRODUCTOS QUE HAY EN LA TABLA EN ESE MOMENTO
     public void exportarProductos() {
         try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Sheet sheet = workbook.createSheet("Productos");
 
-            String[] headers = {"Código", "Nombre", "Descripción", "Categoría", "Precio", "Fecha de Lanzamiento", "Stock"};
+            String[] headers = {"Código", "Nombre", "Descripción", "Categoría", "Precio", "Fecha de Lanzamiento", "Stock", "Posición"};
+
+            Font fontBlanco = workbook.createFont();
+            fontBlanco.setColor(IndexedColors.WHITE.getIndex());
 
             XSSFCellStyle estiloCelda = workbook.createCellStyle();
             XSSFColor gris = new XSSFColor(new java.awt.Color(223, 223, 223));
             estiloCelda.setFillForegroundColor(gris);
             estiloCelda.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
+            XSSFCellStyle estiloFilaNoStock = workbook.createCellStyle();
+            XSSFColor rojo = new XSSFColor(new java.awt.Color(255, 0, 56));
+            estiloFilaNoStock.setFillForegroundColor(rojo);
+            estiloFilaNoStock.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            estiloFilaNoStock.setFont(fontBlanco);
+
+            XSSFCellStyle estiloFilaPrecio = workbook.createCellStyle();
+            XSSFColor verde = new XSSFColor(new java.awt.Color(17, 109, 7));
+            estiloFilaPrecio.setFillForegroundColor(verde);
+            estiloFilaPrecio.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            estiloFilaPrecio.setFont(fontBlanco);
+
+            DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+            symbols.setDecimalSeparator(',');
+            symbols.setGroupingSeparator('.');
+            DecimalFormat df = new DecimalFormat("#,##0.00", symbols);
+
             int rowNum = 1;
+            int startingRow = 0;
 
             if (productosData.size() != filtroProductos.size()) {
 
                 Row filtersRow = sheet.createRow(0);
                 List<String> filters = new ArrayList<>();
 
-                if (searchCategoria != -1) {
-                    filters.add("Categoría: " + categorias.get(searchCategoria - 1).getNombre());
+                if (this.categoriasSearch.size() != this.categorias.size() && !this.categoriasSearch.isEmpty()) {
+
+                    for (int cat : this.categoriasSearch) {
+                        filters.add("Categoría: " + categorias.get(cat).getNombre());
+                    }
                 }
                 if (rangoInicio != null && rangoFin != null) {
                     filters.add("Fecha inicio: " + formatDate(rangoInicio) + " Fecha fin: " + formatDate(rangoFin));
                 } else if (rangoInicio != null) {
-                    filters.add("Filtro inicio: " + formatDate(rangoInicio));
+                    filters.add("Fecha inicio: " + formatDate(rangoInicio));
                 } else if (rangoFin != null) {
-                    filters.add("Filtro fin: " + formatDate(rangoFin));
+                    filters.add("Fecha fin: " + formatDate(rangoFin));
                 }
 
                 for (int i = 0; i < filters.size(); i++) {
@@ -1003,6 +1088,7 @@ public class Main {
                 Row headerRow = sheet.createRow(2);
 
                 rowNum = 3;
+                startingRow = 2;
 
                 for (int i = 0; i < headers.length; i++) {
                     Cell cell = headerRow.createCell(i);
@@ -1023,27 +1109,64 @@ public class Main {
             for (Producto producto : this.filtroProductos) {
                 Row row = sheet.createRow(rowNum++);
 
-                row.createCell(0).setCellValue(producto.getCodigo());
-                row.createCell(1).setCellValue(producto.getNombre());
-                row.createCell(2).setCellValue(producto.getDescripcion());
-                row.createCell(3).setCellValue(producto.getCategoria().getNombre());
-                row.createCell(4).setCellValue(producto.getPrecio());
+                for (int i = 0; i < headers.length; i++) {
+                    Cell cell = row.createCell(i);
 
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-                String fechaFormat = sdf.format(producto.getFechaLanz());
-                row.createCell(5).setCellValue(fechaFormat);
+                    if (!producto.isStock()) {
+                        cell.setCellStyle(estiloFilaNoStock);
+                    } else if (producto.getPrecio() > 100) {
+                        cell.setCellStyle(estiloFilaPrecio);
+                    }
 
-                String stock = (producto.isStock() ? "sí" : "no");
-                row.createCell(6).setCellValue(stock);
+                    switch (i) {
+                        case 0:
+                            cell.setCellValue(producto.getCodigo());
+                            break;
+                        case 1:
+                            cell.setCellValue(producto.getNombre());
+                            break;
+                        case 2:
+                            cell.setCellValue(producto.getDescripcion());
+                            break;
+                        case 3:
+                            cell.setCellValue(producto.getCategoria().getNombre());
+                            break;
+                        case 4:
+                            cell.setCellValue(df.format(producto.getPrecio()) + "€");
+                            break;
+                        case 5:
+                            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                            String fechaFormat = sdf.format(producto.getFechaLanz());
+                            cell.setCellValue(fechaFormat);
+                            break;
+                        case 6:
+                            cell.setCellValue(producto.isStock() ? "sí" : "no");
+                            break;
+                        case 7:
+                            cell.setCellValue(producto.getPosicion() + 1);
+                            break;
+                    }
+                }
             }
+
+            XSSFCellStyle estiloCeldaDerecha = workbook.createCellStyle();
+            estiloCeldaDerecha.setAlignment(HorizontalAlignment.RIGHT);
+
+            String sumaFormateada = df.format(getSum());
+
+            Row totalRow = sheet.createRow(rowNum++);
+            Cell headerCell = totalRow.createCell(3);
+            headerCell.setCellStyle(estiloCelda);
+            headerCell.setCellValue("Total Precio: ");
+            Cell totalCell = totalRow.createCell(4);
+            totalCell.setCellStyle(estiloCeldaDerecha);
+            totalCell.setCellValue(sumaFormateada + "€");
 
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
             }
 
-            for (int i = 0; i < headers.length; i++) {
-                sheet.setAutoFilter(new CellRangeAddress(0, rowNum, i, i));
-            }
+            sheet.setAutoFilter(new CellRangeAddress(startingRow, rowNum, 0, headers.length - 1));
 
             workbook.write(out);
             byte[] content = out.toByteArray();
@@ -1063,6 +1186,9 @@ public class Main {
         }
     }
 
+    // TO DO EXPORT ALL
+    
+    // GESTIONA LA CREACIÓN U OCULTACIÓN DE LA TABLA DE LUGARES DE LOS PRODUCTOS
     public void gestionTablaLugares() {
 
         if (!selectedProducto.isStock()) {
@@ -1090,30 +1216,7 @@ public class Main {
         }
     }
 
-    public Date ajustarMinDate(int tipo) {
-        switch (tipo) {
-            case 0:
-                if (this.rangoFin != null) {
-                    return this.rangoFin;
-                } else {
-                    return null;
-                }
-            case 1:
-                if (this.rangoInicio != null) {
-                    return this.rangoInicio;
-                } else {
-                    return null;
-                }
-            default:
-                return null;
-        }
-    }
-
-    public void onRowSelect(SelectEvent<Producto> event) {
-        FacesMessage msg = new FacesMessage("Producto seleccionado", String.valueOf(event.getObject().getCodigo()));
-        FacesContext.getCurrentInstance().addMessage(null, msg);
-    }
-
+    // GESTIONA EL EVENTO DE REORDENACIÓN DE FILAS
     public void onRowReorder(ReorderEvent event) {
 
         boolean noReorder = false;
@@ -1141,13 +1244,10 @@ public class Main {
                     }
                 }
             }
-
-            FacesMessage msg = new FacesMessage(FacesMessage.SEVERITY_INFO, "Posición de " + productosData.get(event.getFromIndex()).getNombre().toUpperCase() + " cambiada.", "Desde: " + (event.getFromIndex() + 1) + ", Hasta:" + (event.getToIndex() + 1));
-            FacesContext.getCurrentInstance().addMessage(null, msg);
         }
-
     }
 
+    // GESTIONA LA SUBIDA DE ARCHIVOS .XLSX O .XLS
     public void fileUpload(FileUploadEvent event) {
         this.archivoSubido = null;
         UploadedFile file = event.getFile();
@@ -1363,14 +1463,7 @@ public class Main {
         this.archivoSubido = null;
     }
 
-    public double getSum() {
-        if (!filtroProductos.isEmpty()) {
-            return filtroProductos.stream().mapToDouble(Producto::getPrecio).sum();
-        } else {
-            return 0;
-        }
-    }
-
+    // DEVUELVE UNA CADENA EQUIVALENTE AL VALOR DE UNA CELDA, ÚTIL PARA LA LECTURA DE UN EXCEL
     private String getStringValue(Cell cell) {
         if (cell == null) {
             return null;
@@ -1391,6 +1484,15 @@ public class Main {
                 default:
                     return null;
             }
+        }
+    }
+
+    // DEVUELVE LA SUMA DE PRECIOS DE LOS PRODUCTOS VISIBLES
+    public double getSum() {
+        if (!filtroProductos.isEmpty()) {
+            return filtroProductos.stream().mapToDouble(Producto::getPrecio).sum();
+        } else {
+            return 0;
         }
     }
 }

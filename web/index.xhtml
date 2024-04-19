@@ -39,7 +39,7 @@
                     <!-- CRUD -->
 
                     <p:commandButton icon="pi pi-plus" styleClass="ui-button-success" style="margin-right: .5rem" actionListener="#{Main.openNew()}" update=":dialogs:manage-product-content"
-                                     oncomplete="PF('manageProductDialog').show()" disabled="#{Main.productosData.size() == 0}">
+                                     oncomplete="PF('manageProductDialog').show()" disabled="#{Main.filtroProductos.size() eq 0}">
                     </p:commandButton>
 
                     <p:commandButton id="delete-products-button" widgetVar="delete-products-button" value="#{Main.deleteButtonMessage}"
@@ -53,20 +53,21 @@
                     <!-- EXCEL -->
 
                     <p:fileUpload mode="simple" label="Añadir desde Excel" update="growl mainForm:j_idt7 mainForm:tabView" skinSimple="true" auto="true"
-                                  listener="#{Main.fileUpload}" style="margin-right: .1rem" disabled="#{Main.filtroProductos.size() == 0 and Main.activeIndex == 0 or Main.chartProductosData.size() == 0 and Main.activeIndex == 1
-                                              or Main.filtroProductos.size() > 0 and Main.activeIndex == 1 or Main.chartProductosData.size() > 0 and Main.activeIndex == 0}"/>
+                                  listener="#{Main.fileUpload}" style="margin-right: .1rem" rendered="#{Main.filtroProductos.size() gt 0 and Main.activeIndex eq 0 or Main.chartProductosData.size() gt 0 and Main.activeIndex eq 1}"/>
 
-                    <p:commandButton value="XLSX (PrimeFaces)" style="margin-right: .1rem" rendered="#{Main.activeIndex == 0}" disabled="#{Main.filtroProductos.size() == 0 and Main.activeIndex == 0}">
+                    <p:commandButton value="XLSX (PrimeFaces)" style="margin-right: .1rem" rendered="#{Main.activeIndex eq 0 and Main.filtroProductos.size() gt 0}">
                         <p:dataExporter type="xlsx" target="mainForm:tabView:dtProducts" fileName="productos"/>
                     </p:commandButton>
 
-                    <p:commandButton id="export-xlsx-button" widgetVar="export-xlsx-button" style="margin-right: .1rem" value="XLSX (Sin PrimeFaces)" rendered="#{Main.activeIndex == 0}"
-                                     actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true" disabled="#{Main.filtroProductos.size() == 0 and Main.activeIndex == 0}">
+                    <p:commandButton id="export-xlsx-button" widgetVar="export-xlsx-button" style="margin-right: .1rem" value="XLSX (Sin PrimeFaces)" rendered="#{Main.activeIndex eq 0 and Main.filtroProductos.size() gt 0}"
+                                     actionListener="#{Main.exportarProductos()}" ajax="false" immediate="true">
                     </p:commandButton>
 
-                    <p:commandButton value="PDF (PrimeFaces)" disabled="#{Main.filtroProductos.size() == 0 and Main.activeIndex == 0}" rendered="#{Main.activeIndex == 0}">
+                    <p:commandButton value="PDF (PrimeFaces)" rendered="#{Main.activeIndex eq 0 and Main.filtroProductos.size() gt 0}">
                         <p:dataExporter type="pdf" target="mainForm:tabView:dtProducts" fileName="productos"/>
                     </p:commandButton>
+                    
+                    <!-- TO DO -->
 
                 </p:toolbarGroup>
 
@@ -76,23 +77,21 @@
 
                     <p:outputLabel for="searchFecha1" style="margin-right: .5rem">Desde</p:outputLabel>
                     <p:datePicker id="searchFecha1" value="#{Main.rangoInicio}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem"
-                                  maxdate="#{Main.rangoFin != null ? Main.rangoFin : Main.today}" pattern="dd/MM/yyyy">
+                                  maxdate="#{Main.rangoFin ne null ? Main.rangoFin : Main.today}" pattern="dd/MM/yyyy">
                         <p:ajax event="change" update="mainForm:j_idt7"/>
                     </p:datePicker>
 
-                    <p:outputLabel for="searchFecha2" style="margin-right: .5rem">Hasta</p:outputLabel>
-                    <p:datePicker id="searchFecha2" value="#{Main.rangoFin}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem"
-                                  mindate="#{Main.rangoInicio != null ? Main.rangoInicio : null}" maxdate="#{Main.today}" pattern="dd/MM/yyyy">
+                    <p:outputLabel for="searchFecha2" style="margin-right: .5rem;">Hasta</p:outputLabel>
+                    <p:datePicker id="searchFecha2" value="#{Main.rangoFin}" monthNavigator="true" yearNavigator="true" style="margin-right: .5rem;"
+                                  mindate="#{Main.rangoInicio ne null ? Main.rangoInicio : null}" maxdate="#{Main.today}" pattern="dd/MM/yyyy">
                         <p:ajax event="change" update="mainForm:j_idt7"/>
                     </p:datePicker>
 
-                    <p:outputLabel for="searchCategoria" style="margin-right: .5rem">Categoría</p:outputLabel>
-                    <p:selectOneMenu id="searchCategoria" styleClass="ui-custom-filter" style="margin-right: .5rem" value="#{Main.searchCategoria}">
-                        <f:selectItem itemLabel="Todo" itemValue="-1"/>
-                        <f:selectItems value="#{Main.categorias}" var="var" itemValue="#{var.id}" itemLabel="#{var.nombre}" />
-
-                        <!--                        <p:ajax event="change" update="mainForm" />-->
-                    </p:selectOneMenu>
+                    <p:outputLabel for="categoriasSearch" style="margin-right: .5rem">Categoría</p:outputLabel>
+                    <p:selectCheckboxMenu id="categoriasSearch" widgetVar="categoriasSearch" label="Categorías" multiple="true" emptyLabel="Todas" updateLabel="true"
+                                          style="margin-right: .5rem;" panelStyle="width: 10rem" value="#{Main.categoriasSearch}">
+                        <f:selectItems value="#{Main.categorias}" var="var" itemValue="#{var.id}" itemLabel="#{var.nombre}"/>
+                    </p:selectCheckboxMenu>
 
                     <!-- BUSCAR -->
 
@@ -117,7 +116,7 @@
                     <!--                    <p:remoteCommand name="updateChart" action="" update="mainForm"/>-->
 
                     <p:dataTable var="producto" id="dtProducts" widgetVar="dtProducts" value="#{Main.filtroProductos}" rowKey="#{producto.codigo}"
-                                 selection="#{Main.selectedProducto}" selectionMode="single" rowStyleClass="#{producto.stock ? (producto.precio > 100.0 ? 'caro' : null) : 'no-stock'}"
+                                 selection="#{Main.selectedProducto}" selectionMode="single" rowStyleClass="#{producto.stock ? (producto.precio gt 100.0 ? 'caro' : null) : 'no-stock'}"
                                  filteredValue="#{Main.filtroProductos}" draggableRows="true">
 
                         <!-- EVENTOS AJAX -->
@@ -128,10 +127,6 @@
                         <p:ajax event="toggleSelect" update="mainForm"/>
                         <p:ajax event="rowSelect" listener="#{Main.gestionTablaLugares()}" update="mainForm growl" />
                         <p:ajax event="rowToggle" oncomplete="PF('dtLugaresExp').clearFilters();"/>
-
-                        <p:column headerText="Posición" sortBy="#{producto.posicion}" width="40px">
-                            <h:outputText value="#{producto.posicion + 1}" />
-                        </p:column>
 
                         <!-- CRUD -->
 
@@ -162,12 +157,12 @@
                         </p:column>
 
                         <p:column headerText="Nombre" sortBy="#{producto.nombre}" width="200px" filterBy="#{producto.nombre}"
-                                  filterMatchMode="contains">
+                                  filterMatchMode="contains" filterValue="#{Main.filtroNombre}">
                             <h:outputText value="#{producto.nombre}" />
                         </p:column>
 
                         <p:column headerText="Descripción" sortBy="#{producto.descripcion}" width="600px" filterBy="#{producto.descripcion}"
-                                  filterMatchMode="contains">
+                                  filterMatchMode="contains" filterValue="#{Main.descripcion}">
                             <h:outputText value="#{producto.descripcion}" />
                         </p:column>
 
@@ -182,7 +177,7 @@
                             </h:outputText>
                         </p:column>
 
-                        <p:column headerText="Fecha de lanzamiento" sortBy="#{producto.fechaLanz}"
+                        <p:column headerText="Fecha de lanzamiento" sortBy="#{producto.fechaLanz}" filterValue="#{Main.fechaLanz}"
                                   width="160px" filterBy="#{Main.formatDate(producto.fechaLanz)}">
 
                             <f:facet name="filter">
@@ -195,6 +190,10 @@
 
                         <p:column headerText="Stock" style="text-align: center" width="50px" exportValue="#{Main.exportStock(producto.stock)}">
                             <p:selectBooleanCheckbox value="#{producto.stock}" disabled="true"/>
+                        </p:column>
+
+                        <p:column headerText="Posición" sortBy="#{producto.posicion}" width="40px">
+                            <h:outputText value="#{producto.posicion + 1}" />
                         </p:column>
 
                         <!-- ROW EXPANSION: TABLA DE LUGARES -->
@@ -221,9 +220,9 @@
 
                         <!-- COLUMN GROUP: SUMA DE PRECIO TOTAL -->
 
-                        <p:columnGroup type="footer">
+                        <p:columnGroup type="footer" rendered="#{Main.filtroProductos.size() ne 0}">
                             <p:row>
-                                <p:column colspan="7" style="text-align:right" footerText="Total Precio:"/>
+                                <p:column colspan="6" style="text-align:right" footerText="Total Precio:"/>
                                 <p:column style="text-align:right">
                                     <f:facet name="footer">
                                         <h:outputText value="#{Main.getSum()}">
@@ -231,7 +230,7 @@
                                         </h:outputText>
                                     </f:facet>
                                 </p:column>
-                                <p:column colspan="2"/>
+                                <p:column colspan="3"/>
                             </p:row>
                         </p:columnGroup>
 
