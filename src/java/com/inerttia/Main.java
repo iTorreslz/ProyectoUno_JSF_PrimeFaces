@@ -3,8 +3,10 @@ package com.inerttia;
 import com.inerttia.clases.Categoria;
 import com.inerttia.clases.Lugar;
 import com.inerttia.clases.Producto;
-import static com.sun.faces.el.FacesCompositeELResolver.ELResolverChainType.Faces;
-import java.io.ByteArrayInputStream;
+import static com.sun.corba.se.spi.presentation.rmi.StubAdapter.request;
+import es.inerttia.ittwsEntidades.params.Metodos;
+import es.inerttia.ittwsEntidades.rest.Peticion;
+import es.inerttia.ittwsEntidades.wsAlmacen.PaletsRespuesta;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,10 +32,14 @@ import javax.annotation.PostConstruct;
 import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
-import javax.faces.component.UIViewRoot;
 import javax.faces.context.ExternalContext;
 import javax.faces.context.FacesContext;
 import javax.servlet.http.HttpServletResponse;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import static org.apache.poi.ss.usermodel.CellType.NUMERIC;
@@ -47,13 +53,13 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.primefaces.PrimeFaces;
-import org.primefaces.component.datatable.DataTable;
-import org.primefaces.component.export.DataExporter;
+import org.primefaces.component.export.PDFOptions;
+import org.primefaces.component.export.PDFOrientationType;
 import org.primefaces.event.FileUploadEvent;
 import org.primefaces.event.ReorderEvent;
 import org.primefaces.model.DefaultStreamedContent;
@@ -141,9 +147,12 @@ public class Main {
     private boolean filtrado = false;
 
     // ÚTILES
+    private PDFOptions pdfOpt;
     Random random = new Random();
     private UploadedFile archivoSubido;
     private int activeIndex;
+
+    private PaletsRespuesta llamada1;
 
     //------------------------------------------------------------------------//
     //                                  INIT                                  //
@@ -153,8 +162,51 @@ public class Main {
     public void init() {
 
         // VARIABLES DEL INIT
-        selected = -1;
+        OkHttpClient datos = new OkHttpClient();
+        String url = "http://172.26.100.112:8080/ittws3/webresources/post";
 
+        String jsonBody = "{\n"
+                + "    \"almacen\": null,\n"
+                + "    \"centro\": null,\n"
+                + "    \"empresa\": null,\n"
+                + "    \"listaparametros\": [],\n"
+                + "    \"metodo\": \"getPalet\",\n"
+                + "    \"parametro1\": \"112233445566778899\",\n"
+                + "    \"parametro2\": \"1\",\n"
+                + "    \"parametro3\": \"1\",\n"
+                + "    \"parametro4\": \"\",\n"
+                + "    \"parametro5\": \"\",\n"
+                + "    \"parametro6\": \"\",\n"
+                + "    \"parametro7\": \"\",\n"
+                + "    \"parametros\": \"\",\n"
+                + "    \"password\": \"admin\",\n"
+                + "    \"tracking\": \"\",\n"
+                + "    \"usuario\": \"admin\",\n"
+                + "    \"version\": \"1.1.2.37\"\n"
+                + "}";
+
+        RequestBody requestBody = RequestBody.create(jsonBody, MediaType.parse("application/json"));
+        
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build();
+        
+        try {
+            // Ejecuta la solicitud POST
+            Response response = datos.newCall(request).execute();
+
+            // Obtiene la respuesta
+            String responseData = response.body().string();
+
+            // Haz algo con la respuesta
+            System.out.println(responseData);
+
+        } catch (IOException e) {
+        }
+        
+        
+        selected = -1;
         today = new Date();
         minDate = new Date();
 
@@ -168,6 +220,10 @@ public class Main {
         lugaresSelected = new ArrayList<>();
 
         categorias = new ArrayList<>();
+
+        pdfOpt = new PDFOptions();
+        pdfOpt.setOrientation(PDFOrientationType.LANDSCAPE);
+        pdfOpt.setFontName("Arial Unicode MS");
 
         //------------------------------------------------------------------------//
         //                     CREACIÓN DE PRODUCTOS DE PRUEBA                    //
@@ -560,6 +616,10 @@ public class Main {
         this.filtrado = filtrado;
     }
 
+    public void setPdfOpt(PDFOptions pdfOpt) {
+        this.pdfOpt = pdfOpt;
+    }
+
     public Random getRandom() {
         return random;
     }
@@ -582,6 +642,14 @@ public class Main {
 
     public void setActiveIndex(int activeIndex) {
         this.activeIndex = activeIndex;
+    }
+
+    public PaletsRespuesta getLlamada1() {
+        return llamada1;
+    }
+
+    public void setLlamada1(PaletsRespuesta llamada1) {
+        this.llamada1 = llamada1;
     }
 
     //------------------------------------------------------------------------//
@@ -1201,16 +1269,12 @@ public class Main {
         }
     }
 
-    public void exportarProductosZip() {
-        exportarProductos();
-        exportarPDF();
-        combinarArchivos();
+    // EJECUTA LAS OPCIONES DEL PDF
+    public PDFOptions getPdfOpt() {
+        return pdfOpt;
     }
 
-    public void exportarPDF() {
-        // TO DO
-    }
-
+    // DESCARGA EL ARCHIVO ZIP
     public StreamedContent getArchivoZip() {
         File archivoZip = generarArchivoZip();
         final InputStream inputStream;
@@ -1226,11 +1290,10 @@ public class Main {
                 .build();
     }
 
-    // CREA UN ARCHIVO .ZIP CONTENEDOR DE DOS ARCHIVOS, .XLSX Y .PDF
+    // CREA UN ARCHIVO ZIP CONTENEDOR DE DOS ARCHIVOS, XLSX Y PDF
     private File generarArchivoZip() {
         List<File> archivos = new ArrayList<>();
-        archivos.add(new File("ruta/del/archivo/xlsx"));
-        archivos.add(new File("ruta/del/archivo/pdf"));
+        archivos.add(generarArchivoXLSX());
 
         File archivoZip = new File("productos.zip");
 
@@ -1250,8 +1313,168 @@ public class Main {
         return archivoZip;
     }
 
-    private void combinarArchivos() {
-        // Lógica para combinar los archivos XLSX y PDF en un archivo ZIP
+    // GENERA EL ARCHIVO XLSX PARA LA COMPRESIÓN EN ZIP
+    public File generarArchivoXLSX() {
+        try {
+            File archivoXLSX;
+            try (
+                    XSSFWorkbook workbook = new XSSFWorkbook()) {
+                XSSFSheet sheet = workbook.createSheet("Productos");
+
+                String[] headers = {"Código", "Nombre", "Descripción", "Categoría", "Precio", "Fecha de Lanzamiento", "Stock", "Posición"};
+                Font fontBlanco = workbook.createFont();
+                fontBlanco.setColor(IndexedColors.WHITE.getIndex());
+
+                XSSFCellStyle estiloCelda = workbook.createCellStyle();
+                XSSFColor gris = new XSSFColor(new java.awt.Color(223, 223, 223));
+                estiloCelda.setFillForegroundColor(gris);
+
+                estiloCelda.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                XSSFCellStyle estiloFilaNoStock = workbook.createCellStyle();
+                XSSFColor rojo = new XSSFColor(new java.awt.Color(255, 0, 56));
+                estiloFilaNoStock.setFillForegroundColor(rojo);
+
+                estiloFilaNoStock.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                estiloFilaNoStock.setFont(fontBlanco);
+
+                XSSFCellStyle estiloFilaPrecio = workbook.createCellStyle();
+                XSSFColor verde = new XSSFColor(new java.awt.Color(17, 109, 7));
+                estiloFilaPrecio.setFillForegroundColor(verde);
+
+                estiloFilaPrecio.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                estiloFilaPrecio.setFont(fontBlanco);
+
+                DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+                symbols.setDecimalSeparator(',');
+                symbols.setGroupingSeparator('.');
+                DecimalFormat df = new DecimalFormat("#,##0.00", symbols);
+
+                int rowNum = 1;
+                int startingRow = 0;
+                if (productosData.size() != filtroProductos.size()) {
+
+                    Row filtersRow = sheet.createRow(0);
+                    List<String> filters = new ArrayList<>();
+
+                    if (this.categoriasSearch.size() != this.categorias.size() && !this.categoriasSearch.isEmpty()) {
+
+                        for (int cat : this.categoriasSearch) {
+                            filters.add("Categoría: " + categorias.get(cat).getNombre());
+                        }
+                    }
+                    if (rangoInicio != null && rangoFin != null) {
+                        filters.add("Fecha inicio: " + formatDate(rangoInicio) + " Fecha fin: " + formatDate(rangoFin));
+                    } else if (rangoInicio != null) {
+                        filters.add("Fecha inicio: " + formatDate(rangoInicio));
+                    } else if (rangoFin != null) {
+                        filters.add("Fecha fin: " + formatDate(rangoFin));
+                    }
+
+                    for (int i = 0; i < filters.size(); i++) {
+                        Cell cell = filtersRow.createCell(i);
+                        cell.setCellValue(filters.get(i));
+                    }
+
+                    Row headerRow = sheet.createRow(2);
+
+                    rowNum = 3;
+                    startingRow = 2;
+
+                    for (int i = 0; i < headers.length; i++) {
+                        Cell cell = headerRow.createCell(i);
+                        cell.setCellValue(headers[i]);
+                        cell.setCellStyle(estiloCelda);
+                    }
+
+                } else {
+                    Row headerRow = sheet.createRow(0);
+
+                    for (int i = 0; i < headers.length; i++) {
+                        Cell cell = headerRow.createCell(i);
+                        cell.setCellValue(headers[i]);
+                        cell.setCellStyle(estiloCelda);
+                    }
+                }
+                for (Producto producto : this.filtroProductos) {
+                    Row row = sheet.createRow(rowNum++);
+
+                    for (int i = 0; i < headers.length; i++) {
+                        Cell cell = row.createCell(i);
+
+                        if (!producto.isStock()) {
+                            cell.setCellStyle(estiloFilaNoStock);
+                        } else if (producto.getPrecio() > 100) {
+                            cell.setCellStyle(estiloFilaPrecio);
+                        }
+
+                        switch (i) {
+                            case 0:
+                                cell.setCellValue(producto.getCodigo());
+                                break;
+                            case 1:
+                                cell.setCellValue(producto.getNombre());
+                                break;
+                            case 2:
+                                cell.setCellValue(producto.getDescripcion());
+                                break;
+                            case 3:
+                                cell.setCellValue(producto.getCategoria().getNombre());
+                                break;
+                            case 4:
+                                cell.setCellValue(df.format(producto.getPrecio()) + "€");
+                                break;
+                            case 5:
+                                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+                                String fechaFormat = sdf.format(producto.getFechaLanz());
+                                cell.setCellValue(fechaFormat);
+                                break;
+                            case 6:
+                                cell.setCellValue(producto.isStock() ? "sí" : "no");
+                                break;
+                            case 7:
+                                cell.setCellValue(producto.getPosicion() + 1);
+                                break;
+                        }
+                    }
+                }
+
+                XSSFCellStyle estiloCeldaDerecha = workbook.createCellStyle();
+                estiloCeldaDerecha.setAlignment(HorizontalAlignment.RIGHT);
+
+                String sumaFormateada = df.format(getSum());
+                Row totalRow = sheet.createRow(rowNum++);
+
+                Cell headerCell = totalRow.createCell(3);
+                headerCell.setCellStyle(estiloCelda);
+                headerCell.setCellValue("Total Precio: ");
+
+                Cell totalCell = totalRow.createCell(4);
+                totalCell.setCellStyle(estiloCeldaDerecha);
+                totalCell.setCellValue(sumaFormateada + "€");
+
+                for (int i = 0; i < headers.length; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+
+                sheet.setAutoFilter(new CellRangeAddress(startingRow, rowNum, 0, headers.length - 1));
+
+                // Generar el archivo XLSX
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                workbook.write(out);
+                byte[] content = out.toByteArray();
+
+                archivoXLSX = File.createTempFile("productos", ".xlsx");
+
+                try (FileOutputStream fos = new FileOutputStream(archivoXLSX)) {
+                    fos.write(content);
+                }
+            }
+
+            return archivoXLSX;
+
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     // GESTIONA LA CREACIÓN U OCULTACIÓN DE LA TABLA DE LUGARES DE LOS PRODUCTOS
@@ -1560,5 +1783,17 @@ public class Main {
         } else {
             return 0;
         }
+    }
+
+    public PaletsRespuesta llamada(String usuario, String password, String sscc, int buscarMuelle, int lineas) {
+        PaletsRespuesta r = null;
+        Peticion p = new Peticion();
+        p.setUsuario(usuario);
+        p.setPassword(password);
+        p.setParametro1(sscc);
+        p.setParametro2(String.valueOf(buscarMuelle));
+        p.setParametro3(String.valueOf(lineas));
+        p.setMetodo(Metodos.GET_PALET);
+        return r;
     }
 }
