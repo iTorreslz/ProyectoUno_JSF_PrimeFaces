@@ -339,11 +339,9 @@
                         </p:toolbarGroup>
                         <p:toolbarGroup align="right">
 
-                            <p:inputText id="buscarPalet" value="#{searchView.text1}" required="true" label="Text 1" style="width: 12rem">
-                                <f:validateLength minimum="2"/>
-                            </p:inputText>
-                            <h:outputText value="#{searchView.text1}"/>
-
+                            <p:autoComplete id="buscarPalets" value="#{Main.selectedPalet.matricula}" completeMethod="#{Main.autocompleteSSCC}"
+                                            scrollHeight="250" />
+                            
                         </p:toolbarGroup>
 
                     </p:toolbar>

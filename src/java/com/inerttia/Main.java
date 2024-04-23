@@ -98,7 +98,7 @@ public class Main {
     //
     // PALET
     private Palet selectedPalet;
-    
+
     // ARTÍCULO
     private Articulo selectedArticulo;
 
@@ -175,7 +175,7 @@ public class Main {
 
         // OBTENCIÓN DE PALETS
         pales = new ArrayList<>();
-        
+
         OkHttpClient datos = new OkHttpClient();
         String url = "http://172.26.100.112:8080/ittws3/webresources/post";
 
@@ -233,7 +233,7 @@ public class Main {
 
         // VARIABLES DEL INIT
         selectedPalet = pales.get(0);
-        
+
         selected = -1;
         today = new Date();
         minDate = new Date();
@@ -1856,5 +1856,15 @@ public class Main {
         for (Palet palet : pales) {
             this.palesData.add(palet);
         }
+    }
+
+    public List<String> autocompleteSSCC(String consulta) {
+        String consultaMinus = consulta.toLowerCase();
+        List<String> SSCCList = new ArrayList<>();
+        for (Palet palet : pales) {
+            SSCCList.add(palet.getMatricula());
+        }
+
+        return SSCCList.stream().filter(m -> m.toLowerCase().startsWith(consultaMinus)).collect(Collectors.toList());
     }
 }
