@@ -1,11 +1,14 @@
 package com.inerttia;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inerttia.clases.Categoria;
 import com.inerttia.clases.Lugar;
 import com.inerttia.clases.Producto;
-import static com.sun.corba.se.spi.presentation.rmi.StubAdapter.request;
 import es.inerttia.ittwsEntidades.params.Metodos;
 import es.inerttia.ittwsEntidades.rest.Peticion;
+import es.inerttia.ittwsEntidades.wsAlmacen.Articulo;
+import es.inerttia.ittwsEntidades.wsAlmacen.Palet;
 import es.inerttia.ittwsEntidades.wsAlmacen.PaletsRespuesta;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -93,6 +96,12 @@ public class Main {
     //                               VARIABLES                                //
     //------------------------------------------------------------------------//
     //
+    // PALET
+    private Palet selectedPalet;
+    
+    // ARTÍCULO
+    private Articulo selectedArticulo;
+
     // PRODUCTO
     private Producto selectedProducto;
     private Producto selectedLazyProducto;
@@ -114,6 +123,11 @@ public class Main {
     private LineChartModel lineModel;
     private DonutChartModel donutModel;
     private BarChartModel barModel;
+
+    // LISTA PALÉS
+    private List<Palet> pales;
+    private List<Palet> palesData;
+    private List<Palet> filtroPales;
 
     // LISTAS PRODUCTOS
     private List<Producto> productos;
@@ -152,8 +166,6 @@ public class Main {
     private UploadedFile archivoSubido;
     private int activeIndex;
 
-    private PaletsRespuesta llamada1;
-
     //------------------------------------------------------------------------//
     //                                  INIT                                  //
     //------------------------------------------------------------------------//
@@ -161,11 +173,13 @@ public class Main {
     @PostConstruct
     public void init() {
 
-        // VARIABLES DEL INIT
+        // OBTENCIÓN DE PALETS
+        pales = new ArrayList<>();
+        
         OkHttpClient datos = new OkHttpClient();
         String url = "http://172.26.100.112:8080/ittws3/webresources/post";
 
-        String jsonBody = "{\n"
+        String json = "{\n"
                 + "    \"almacen\": null,\n"
                 + "    \"centro\": null,\n"
                 + "    \"empresa\": null,\n"
@@ -185,26 +199,40 @@ public class Main {
                 + "    \"version\": \"1.1.2.37\"\n"
                 + "}";
 
-        RequestBody requestBody = RequestBody.create(jsonBody, MediaType.parse("application/json"));
-        
+        RequestBody requestBody = RequestBody.create(json, MediaType.parse("application/json"));
+
         Request request = new Request.Builder()
                 .url(url)
                 .post(requestBody)
                 .build();
-        
+
         try {
-            // Ejecuta la solicitud POST
             Response response = datos.newCall(request).execute();
 
-            // Obtiene la respuesta
             String responseData = response.body().string();
 
-            // Haz algo con la respuesta
-            System.out.println(responseData);
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            try {
+                // Convierte el JSON a objeto Palet
+                PaletsRespuesta palet = objectMapper.readValue(responseData, PaletsRespuesta.class);
+                System.out.println("Response: " + palet.getRespuesta().getMensaje());
+
+                for (Palet responsePalet : palet.getPalets()) {
+                    pales.add(responsePalet);
+                }
+
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
 
         } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
-        
+
+        // VARIABLES DEL INIT
+        selectedPalet = pales.get(0);
         
         selected = -1;
         today = new Date();
@@ -352,6 +380,22 @@ public class Main {
     //                           GETTERS Y SETTERS                            //
     //------------------------------------------------------------------------//
     //
+    public Palet getSelectedPalet() {
+        return selectedPalet;
+    }
+
+    public void setSelectedPalet(Palet selectedPalet) {
+        this.selectedPalet = selectedPalet;
+    }
+
+    public Articulo getSelectedArticulo() {
+        return selectedArticulo;
+    }
+
+    public void setSelectedArticulo(Articulo selectedArticulo) {
+        this.selectedArticulo = selectedArticulo;
+    }
+
     public Producto getSelectedProducto() {
         return selectedProducto;
     }
@@ -462,6 +506,30 @@ public class Main {
 
     public void setBarModel(BarChartModel barModel) {
         this.barModel = barModel;
+    }
+
+    public List<Palet> getPales() {
+        return pales;
+    }
+
+    public void setPales(List<Palet> pales) {
+        this.pales = pales;
+    }
+
+    public List<Palet> getPalesData() {
+        return palesData;
+    }
+
+    public void setPalesData(List<Palet> palesData) {
+        this.palesData = palesData;
+    }
+
+    public List<Palet> getFiltroPales() {
+        return filtroPales;
+    }
+
+    public void setFiltroPales(List<Palet> filtroPales) {
+        this.filtroPales = filtroPales;
     }
 
     public List<Producto> getProductos() {
@@ -644,14 +712,6 @@ public class Main {
         this.activeIndex = activeIndex;
     }
 
-    public PaletsRespuesta getLlamada1() {
-        return llamada1;
-    }
-
-    public void setLlamada1(PaletsRespuesta llamada1) {
-        this.llamada1 = llamada1;
-    }
-
     //------------------------------------------------------------------------//
     //                           MÉTODOS DEL BEAN                             //
     //------------------------------------------------------------------------//
@@ -667,7 +727,7 @@ public class Main {
     }
 
     // MUESTRA UNA TABLA DE PRODUCTOS (CRUD)
-    public void rellenarTabla() {
+    public void rellenarTablaProductos() {
 
         if (this.activeIndex == 0) {
             PrimeFaces.current().executeScript("PF('dtProducts').clearFilters()");
@@ -872,7 +932,7 @@ public class Main {
         } else {
             switch (validation(this.selectedProducto)) {
                 case "correcto":
-                    rellenarTabla();
+                    rellenarTablaProductos();
                     FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Producto Actualizado", ""));
                     PrimeFaces.current().executeScript("PF('manageProductDialog').hide()");
                     break;
@@ -1785,15 +1845,16 @@ public class Main {
         }
     }
 
-    public PaletsRespuesta llamada(String usuario, String password, String sscc, int buscarMuelle, int lineas) {
-        PaletsRespuesta r = null;
-        Peticion p = new Peticion();
-        p.setUsuario(usuario);
-        p.setPassword(password);
-        p.setParametro1(sscc);
-        p.setParametro2(String.valueOf(buscarMuelle));
-        p.setParametro3(String.valueOf(lineas));
-        p.setMetodo(Metodos.GET_PALET);
-        return r;
+    // MUESTRA UNA TABLA DE PRODUCTOS (CRUD)
+    public void rellenarTablaPales() {
+
+        PrimeFaces.current().executeScript("PF('dtPales').clearFilters()");
+
+        this.palesData = new ArrayList<>();
+        this.filtroPales = new ArrayList<>();
+
+        for (Palet palet : pales) {
+            this.palesData.add(palet);
+        }
     }
 }

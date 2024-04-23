@@ -20,6 +20,10 @@
             .align-right input {
                 text-align: right;
             }
+            .ui-datatable-header {
+                background-color: #2196F3 !important;
+                color: white !important;
+            }
         </style>
     </h:head>
 
@@ -99,7 +103,7 @@
 
                     <!-- BUSCAR -->
 
-                    <p:commandButton icon="pi pi-search" styleClass="ui-button-success" actionListener="#{Main.rellenarTabla}" update="mainForm:tabView mainForm:j_idt7"
+                    <p:commandButton icon="pi pi-search" styleClass="ui-button-success" actionListener="#{Main.rellenarTablaProductos}" update="mainForm:tabView mainForm:j_idt7"
                                      onclick="cambiarToggler();"/>
                 </p:toolbarGroup>
 
@@ -320,6 +324,109 @@
 
                 </p:tab>
 
+                <!-- TAB DE PALÉS -->
+
+                <p:tab id="paletTab" title="Palés">
+
+                    <p:toolbar style="margin-bottom:10px">
+                        <p:toolbarGroup>
+
+                            <p:commandButton icon="pi pi-shopping-cart" styleClass="ui-button-primary" style="margin-right: .5rem"/>
+                            <p:commandButton icon="pi pi-file" styleClass="ui-button-primary" style="margin-right: .5rem"/>
+
+
+
+                        </p:toolbarGroup>
+                        <p:toolbarGroup align="right">
+
+                            <p:inputText id="buscarPalet" value="#{searchView.text1}" required="true" label="Text 1" style="width: 12rem">
+                                <f:validateLength minimum="2"/>
+                            </p:inputText>
+                            <h:outputText value="#{searchView.text1}"/>
+
+                        </p:toolbarGroup>
+
+                    </p:toolbar>
+
+                    <div style="display: flex">
+                        <div style="display: flex; flex-direction: column; margin-right:10px" >
+                            <p:outputLabel for="sscc" value="SSCC" />
+                            <p:inputText id="sscc" value="#{Main.selectedPalet.matricula}" disabled="true"/>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; margin-right:10px">
+                            <p:outputLabel for="referencia_externa" value="Referencia Externa" />
+                            <p:inputText id="referencia_externa" value="#{Main.selectedPalet.referenciaExterna}" disabled="true"/>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; margin-right:10px">
+                            <p:outputLabel for="ubicacion_actual" value="Ubicación Actual" />
+                            <p:inputText id="ubicacion_actual" value="#{Main.selectedPalet.ubicacion}" disabled="true"/>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; margin-right:10px">
+                            <p:outputLabel for="hueco" value="Hueco" />
+                            <p:inputText id="hueco" value="#{Main.selectedPalet.tipoHueco}" disabled="true"/>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; margin-right:10px">
+                            <p:outputLabel for="fecha_creacion" value="Fecha Creación" />
+                            <p:inputText id="fecha_creacion" value="#{Main.selectedPalet.datosAdmision.fechaAdmision}" disabled="true"/>
+                        </div>
+                    </div>
+
+                    <p:dataTable var="articulo" id="dtPales" widgetVar="dtPales" value="#{Main.selectedPalet.lineas}" rowKey="#{articulo.articulo.codigo}"
+                                 style="margin-top: 10px" selection="#{Main.selectedArticulo}" selectionMode="single" filteredValue="#{Main.filtroPales}">
+
+                        <!-- EVENTOS AJAX -->
+                        <!--              -->
+
+                        <f:facet name="header">
+                            <div class="flex justify-content-between align-items-center">
+                                Total de artículos
+
+
+                            </div>
+                        </f:facet>
+
+                        <p:column headerText="Artículo" width="78px">
+                            <h:outputLabel id="articulo" value="#{articulo.articulo.codigo}"/>
+                        </p:column>
+
+                        <p:column headerText="Referencia" width="78px">
+                            <h:outputLabel id="referencia" style="display: block; text-align: right" value="#{articulo.articulo.referencia}"/>
+                        </p:column>
+
+                        <p:column headerText="Descripción" width="240px">
+                            <h:outputLabel id="descripcion" value="#{articulo.articulo.descripcion}"/>
+                        </p:column>
+
+                        <p:column headerText="Código de barras" width="60px">
+                            <h:outputLabel id="codigo_barras" style="display: block; text-align: right" value="#{articulo.articulo.codigoBarras}"/>
+                        </p:column>
+
+                        <p:column headerText="Lote" width="35px">
+                            <h:outputLabel id="lote" style="display: block; text-align: right" value="#{articulo.lote.codigo}"/>
+                        </p:column>
+
+                        <p:column headerText="Fecha Caducidad" width="58px">
+                            <h:outputLabel id="fecha_caducidad" value="#{articulo.lote.caducidad}"/>
+                        </p:column>
+
+                        <p:column headerText="Cantidad" width="15px">
+                            <h:outputLabel id="cantidad" style="display: block; text-align: right" value="#{articulo.articulo.unidadesCodigoBarras}"/>
+                        </p:column>
+
+                        <p:column headerText="Serie Pedido" width="32px">
+                            <h:outputLabel id="serie_pedido" style="display: block; text-align: right" value="#{Main.selectedPalet.seriePedido}"/>
+                        </p:column>
+
+                        <p:column headerText="Pedido número" width="44px">
+                            <h:outputLabel id="pedido_numero" style="display: block; text-align: right" value="#{Main.selectedPalet.numeroPedido}"/>
+                        </p:column>
+                    </p:dataTable>
+
+                </p:tab>
             </p:tabView>
 
         </h:form>
