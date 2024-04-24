@@ -4,7 +4,7 @@
       xmlns:p="http://primefaces.org/ui">
 
     <h:head>
-        <title>Productos</title>
+        <title>Inerttia Iván Torres</title>
 
         <!-- ESTILOS -->
 
@@ -24,6 +24,12 @@
                 background-color: #2196F3 !important;
                 color: white !important;
             }
+            .ui-sortable-column .ui-sortable-column-icon {
+                display: none !important;
+            }
+            .ui-sortable-column .ui-column-filter {
+                display: none !important;
+            }
         </style>
     </h:head>
 
@@ -37,7 +43,7 @@
 
         <h:form id="mainForm">
 
-            <p:toolbar>
+            <p:toolbar rendered="#{Main.activeIndex eq 1 or Main.activeIndex eq 2}">
                 <p:toolbarGroup>
 
                     <!-- CRUD -->
@@ -117,7 +123,118 @@
 
                 <!-- TAB 01 -->
 
-                <p:tab title="General">
+                <p:tab id="paletTab" title="Palés">
+
+                    <p:toolbar style="margin-bottom:10px">
+                        <p:toolbarGroup>
+
+                            <p:commandButton icon="pi pi-shopping-cart" styleClass="ui-button-primary" style="margin-right: .5rem"/>
+                            <p:commandButton icon="pi pi-file" styleClass="ui-button-primary" style="margin-right: .5rem"/>
+
+                        </p:toolbarGroup>
+                        <p:toolbarGroup align="right">
+
+                            <!-- BUSCAR -->
+
+                            <p:inputText id="buscarPalet" value="#{Main.matriculaBuscada}" placeholder="Buscar palet..." style="width: 12rem; margin-right: 3px;"/>
+
+                            <p:commandButton icon="pi pi-search" styleClass="ui-button-success" actionListener="#{Main.emptyCheckSearchPalet}" update="mainForm:tabView growl"/>
+
+                        </p:toolbarGroup>
+
+                    </p:toolbar>
+
+                    <div style="display: flex">
+                        <div style="display: flex; flex-direction: column; margin-right:10px" >
+                            <p:outputLabel for="sscc" value="SSCC" />
+                            <p:inputText id="sscc" value="#{Main.selectedPalet.matricula}" disabled="true"/>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; margin-right:10px">
+                            <p:outputLabel for="referencia_externa" value="Referencia Externa" />
+                            <p:inputText id="referencia_externa" value="#{Main.selectedPalet.referenciaExterna}" disabled="true"/>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; margin-right:10px">
+                            <p:outputLabel for="ubicacion_actual" value="Ubicación Actual" />
+                            <p:inputText id="ubicacion_actual" value="#{Main.selectedPalet.ubicacion}" disabled="true"/>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; margin-right:10px">
+                            <p:outputLabel for="hueco" value="Hueco" />
+                            <p:inputText id="hueco" value="#{Main.selectedPalet.tipoHueco}" disabled="true"/>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; margin-right:10px">
+                            <p:outputLabel for="fecha_creacion" value="Fecha Creación" />
+                            <p:inputText id="fecha_creacion" value="#{Main.selectedPalet.datosAdmision.fechaAdmision}" disabled="true"/>
+                        </div>
+                    </div>
+
+                    <p:dataTable var="linea" id="dtPales" widgetVar="dtPales" value="#{Main.selectedPalet.lineas}" rowKey="#{linea.articulo.codigo}"
+                                 style="margin-top: 10px" filteredValue="#{Main.filtroLineas}">
+
+                        <!-- EVENTOS AJAX -->
+                        <!--              -->
+
+                        <f:facet name="header">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Total de Artículos</span>
+
+                                <div class="ui-input-icon-left">
+                                    <i class="pi pi-search" />
+                                    <p:inputText id="globalFilter" widgetVar="globalFilter" style="margin-right: 5px;" onkeyup="gestionFiltradoPalets(event);"
+                                                 placeholder="Search" class="pi pi-search"/>
+                                    <p:outputLabel rendered="#{Main.selectedPalet != null}">
+                                        Total #{Main.selectedPalet.lineas.size()}
+                                    </p:outputLabel>
+                                </div>
+
+                            </div>
+                        </f:facet>
+
+                        <p:column headerText="Artículo" width="78px" sortBy="#{linea.articulo.codigo}" filterBy="#{linea.articulo.codigo}" filterMatchMode="contains">
+                            <h:outputLabel id="articulo" value="#{linea.articulo.codigo}"/>
+                        </p:column>
+
+                        <p:column headerText="Referencia" width="78px" sortBy="#{linea.articulo.referencia}" filterBy="#{linea.articulo.referencia}" filterMatchMode="contains">
+                            <h:outputLabel id="referencia" style="display: block; text-align: right" value="#{linea.articulo.referencia}"/>
+                        </p:column>
+
+                        <p:column headerText="Descripción" width="240px" sortBy="#{linea.articulo.descripcion}" filterBy="#{linea.articulo.descripcion}" filterMatchMode="contains">
+                            <h:outputLabel id="descripcion" value="#{linea.articulo.descripcion}"/>
+                        </p:column>
+
+                        <p:column headerText="Código de barras" width="60px" sortBy="#{linea.articulo.codigoBarras}" filterBy="#{linea.articulo.codigoBarras}" filterMatchMode="contains">
+                            <h:outputLabel id="codigo_barras" style="display: block; text-align: right" value="#{linea.articulo.codigoBarras}"/>
+                        </p:column>
+
+                        <p:column headerText="Lote" width="35px" sortBy="#{linea.lote.codigo}" filterBy="#{linea.lote.codigo}" filterMatchMode="contains">
+                            <h:outputLabel id="lote" style="display: block; text-align: right" value="#{linea.lote.codigo}"/>
+                        </p:column>
+
+                        <p:column headerText="Fecha Caducidad" width="58px" sortBy="#{linea.lote.caducidad}" filterBy="#{linea.lote.caducidad}" filterMatchMode="contains">
+                            <h:outputLabel id="fecha_caducidad" value="#{linea.lote.caducidad}"/>
+                        </p:column>
+
+                        <p:column headerText="Cantidad" width="15px" sortBy="#{linea.articulo.unidadesCodigoBarras}">
+                            <h:outputLabel id="cantidad" style="display: block; text-align: right" value="#{linea.articulo.unidadesCodigoBarras}"/>
+                        </p:column>
+
+                        <p:column headerText="Serie Pedido" width="32px" sortBy="#{Main.selectedPalet.seriePedido}">
+                            <h:outputLabel id="serie_pedido" style="display: block; text-align: right" value="#{Main.selectedPalet.seriePedido}"/>
+                        </p:column>
+
+                        <p:column headerText="Pedido número" width="44px" sortBy="#{Main.selectedPalet.numeroPedido}">
+                            <h:outputLabel id="pedido_numero" style="display: block; text-align: right" value="#{Main.selectedPalet.numeroPedido}"/>
+                        </p:column>
+                    </p:dataTable>
+
+                </p:tab>
+
+                <!-- TAB 02 -->
+
+                <p:tab title="Productos">
 
                     <!-- TABLA DE PRODUCTOS -->
 
@@ -310,9 +427,9 @@
                     </p:dataTable>
                 </p:tab>
 
-                <!-- TAB DE CHARTS DE PRECIO DE PRODUCTO -->
+                <!-- TAB 03 -->
 
-                <p:tab id="chartsTab" title="Charts">
+                <p:tab id="chartsTab" title="Charts de productos">
 
                     <!-- LINE - DONUT - BAR -->
 
@@ -321,108 +438,6 @@
                     <p:donutChart id="donutChart" widgetVar="donutChart" model="#{Main.donutModel}" style="width: 100%; height: 500px; margin-top: 50px;" rendered="#{Main.chartProductosData.size() > 0}"/>
 
                     <p:barChart id="barChart" widgetVar="barChart" model="#{Main.barModel}" style="width: 100%; height: 500px; margin-top: 50px;" rendered="#{Main.chartProductosData.size() > 0}"/>
-
-                </p:tab>
-
-                <!-- TAB DE PALÉS -->
-
-                <p:tab id="paletTab" title="Palés">
-
-                    <p:toolbar style="margin-bottom:10px">
-                        <p:toolbarGroup>
-
-                            <p:commandButton icon="pi pi-shopping-cart" styleClass="ui-button-primary" style="margin-right: .5rem"/>
-                            <p:commandButton icon="pi pi-file" styleClass="ui-button-primary" style="margin-right: .5rem"/>
-
-
-
-                        </p:toolbarGroup>
-                        <p:toolbarGroup align="right">
-
-                            <p:autoComplete id="buscarPalets" value="#{Main.selectedPalet.matricula}" completeMethod="#{Main.autocompleteSSCC}"
-                                            scrollHeight="250" />
-                            
-                        </p:toolbarGroup>
-
-                    </p:toolbar>
-
-                    <div style="display: flex">
-                        <div style="display: flex; flex-direction: column; margin-right:10px" >
-                            <p:outputLabel for="sscc" value="SSCC" />
-                            <p:inputText id="sscc" value="#{Main.selectedPalet.matricula}" disabled="true"/>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; margin-right:10px">
-                            <p:outputLabel for="referencia_externa" value="Referencia Externa" />
-                            <p:inputText id="referencia_externa" value="#{Main.selectedPalet.referenciaExterna}" disabled="true"/>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; margin-right:10px">
-                            <p:outputLabel for="ubicacion_actual" value="Ubicación Actual" />
-                            <p:inputText id="ubicacion_actual" value="#{Main.selectedPalet.ubicacion}" disabled="true"/>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; margin-right:10px">
-                            <p:outputLabel for="hueco" value="Hueco" />
-                            <p:inputText id="hueco" value="#{Main.selectedPalet.tipoHueco}" disabled="true"/>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; margin-right:10px">
-                            <p:outputLabel for="fecha_creacion" value="Fecha Creación" />
-                            <p:inputText id="fecha_creacion" value="#{Main.selectedPalet.datosAdmision.fechaAdmision}" disabled="true"/>
-                        </div>
-                    </div>
-
-                    <p:dataTable var="articulo" id="dtPales" widgetVar="dtPales" value="#{Main.selectedPalet.lineas}" rowKey="#{articulo.articulo.codigo}"
-                                 style="margin-top: 10px" selection="#{Main.selectedArticulo}" selectionMode="single" filteredValue="#{Main.filtroPales}">
-
-                        <!-- EVENTOS AJAX -->
-                        <!--              -->
-
-                        <f:facet name="header">
-                            <div class="flex justify-content-between align-items-center">
-                                Total de artículos
-
-
-                            </div>
-                        </f:facet>
-
-                        <p:column headerText="Artículo" width="78px">
-                            <h:outputLabel id="articulo" value="#{articulo.articulo.codigo}"/>
-                        </p:column>
-
-                        <p:column headerText="Referencia" width="78px">
-                            <h:outputLabel id="referencia" style="display: block; text-align: right" value="#{articulo.articulo.referencia}"/>
-                        </p:column>
-
-                        <p:column headerText="Descripción" width="240px">
-                            <h:outputLabel id="descripcion" value="#{articulo.articulo.descripcion}"/>
-                        </p:column>
-
-                        <p:column headerText="Código de barras" width="60px">
-                            <h:outputLabel id="codigo_barras" style="display: block; text-align: right" value="#{articulo.articulo.codigoBarras}"/>
-                        </p:column>
-
-                        <p:column headerText="Lote" width="35px">
-                            <h:outputLabel id="lote" style="display: block; text-align: right" value="#{articulo.lote.codigo}"/>
-                        </p:column>
-
-                        <p:column headerText="Fecha Caducidad" width="58px">
-                            <h:outputLabel id="fecha_caducidad" value="#{articulo.lote.caducidad}"/>
-                        </p:column>
-
-                        <p:column headerText="Cantidad" width="15px">
-                            <h:outputLabel id="cantidad" style="display: block; text-align: right" value="#{articulo.articulo.unidadesCodigoBarras}"/>
-                        </p:column>
-
-                        <p:column headerText="Serie Pedido" width="32px">
-                            <h:outputLabel id="serie_pedido" style="display: block; text-align: right" value="#{Main.selectedPalet.seriePedido}"/>
-                        </p:column>
-
-                        <p:column headerText="Pedido número" width="44px">
-                            <h:outputLabel id="pedido_numero" style="display: block; text-align: right" value="#{Main.selectedPalet.numeroPedido}"/>
-                        </p:column>
-                    </p:dataTable>
 
                 </p:tab>
             </p:tabView>
@@ -530,14 +545,6 @@
                 }
             };
 
-            function ajustarTamañoDelGrafico() {
-
-                var donutChart = document.getElementById('mainForm:tabView:donutChart_canvas');
-
-                donutChart.style.width = '40px !important';
-                donutChart.style.height = '30px !important';
-            }
-
             function guardarPosicion() {
 
                 let recordatorios = document.getElementById('drag');
@@ -563,6 +570,21 @@
                 });
             }
 
+            let contadorTyping;
+            let tiempoMaximo = 500;
+
+            function gestionFiltradoPalets(event) {
+                clearTimeout(contadorTyping);
+                if (event.target.value) {
+                    contadorTyping = setTimeout(paletsFilter, tiempoMaximo);
+                } else {
+                    paletsFilter();
+                }
+            }
+
+            function paletsFilter() {
+                PF('dtPales').filter();
+            }
         </script>
 
     </h:body>

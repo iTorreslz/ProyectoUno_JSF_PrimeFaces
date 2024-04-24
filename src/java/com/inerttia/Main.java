@@ -5,10 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inerttia.clases.Categoria;
 import com.inerttia.clases.Lugar;
 import com.inerttia.clases.Producto;
-import es.inerttia.ittwsEntidades.params.Metodos;
-import es.inerttia.ittwsEntidades.rest.Peticion;
-import es.inerttia.ittwsEntidades.wsAlmacen.Articulo;
 import es.inerttia.ittwsEntidades.wsAlmacen.Palet;
+import es.inerttia.ittwsEntidades.wsAlmacen.PaletLinea;
 import es.inerttia.ittwsEntidades.wsAlmacen.PaletsRespuesta;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -98,9 +96,7 @@ public class Main {
     //
     // PALET
     private Palet selectedPalet;
-
-    // ARTÍCULO
-    private Articulo selectedArticulo;
+    private String matriculaBuscada;
 
     // PRODUCTO
     private Producto selectedProducto;
@@ -127,7 +123,9 @@ public class Main {
     // LISTA PALÉS
     private List<Palet> pales;
     private List<Palet> palesData;
-    private List<Palet> filtroPales;
+
+    // LISTA ARTÍCULOS
+    private List<PaletLinea> filtroLineas;
 
     // LISTAS PRODUCTOS
     private List<Producto> productos;
@@ -174,66 +172,7 @@ public class Main {
     public void init() {
 
         // OBTENCIÓN DE PALETS
-        pales = new ArrayList<>();
-
-        OkHttpClient datos = new OkHttpClient();
-        String url = "http://172.26.100.112:8080/ittws3/webresources/post";
-
-        String json = "{\n"
-                + "    \"almacen\": null,\n"
-                + "    \"centro\": null,\n"
-                + "    \"empresa\": null,\n"
-                + "    \"listaparametros\": [],\n"
-                + "    \"metodo\": \"getPalet\",\n"
-                + "    \"parametro1\": \"112233445566778899\",\n"
-                + "    \"parametro2\": \"1\",\n"
-                + "    \"parametro3\": \"1\",\n"
-                + "    \"parametro4\": \"\",\n"
-                + "    \"parametro5\": \"\",\n"
-                + "    \"parametro6\": \"\",\n"
-                + "    \"parametro7\": \"\",\n"
-                + "    \"parametros\": \"\",\n"
-                + "    \"password\": \"admin\",\n"
-                + "    \"tracking\": \"\",\n"
-                + "    \"usuario\": \"admin\",\n"
-                + "    \"version\": \"1.1.2.37\"\n"
-                + "}";
-
-        RequestBody requestBody = RequestBody.create(json, MediaType.parse("application/json"));
-
-        Request request = new Request.Builder()
-                .url(url)
-                .post(requestBody)
-                .build();
-
-        try {
-            Response response = datos.newCall(request).execute();
-
-            String responseData = response.body().string();
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-            try {
-                // Convierte el JSON a objeto Palet
-                PaletsRespuesta palet = objectMapper.readValue(responseData, PaletsRespuesta.class);
-                System.out.println("Response: " + palet.getRespuesta().getMensaje());
-
-                for (Palet responsePalet : palet.getPalets()) {
-                    pales.add(responsePalet);
-                }
-
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
-
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-
         // VARIABLES DEL INIT
-        selectedPalet = pales.get(0);
-
         selected = -1;
         today = new Date();
         minDate = new Date();
@@ -388,12 +327,12 @@ public class Main {
         this.selectedPalet = selectedPalet;
     }
 
-    public Articulo getSelectedArticulo() {
-        return selectedArticulo;
+    public String getMatriculaBuscada() {
+        return matriculaBuscada;
     }
 
-    public void setSelectedArticulo(Articulo selectedArticulo) {
-        this.selectedArticulo = selectedArticulo;
+    public void setMatriculaBuscada(String matriculaBuscada) {
+        this.matriculaBuscada = matriculaBuscada;
     }
 
     public Producto getSelectedProducto() {
@@ -524,12 +463,12 @@ public class Main {
         this.palesData = palesData;
     }
 
-    public List<Palet> getFiltroPales() {
-        return filtroPales;
+    public List<PaletLinea> getFiltroLineas() {
+        return filtroLineas;
     }
 
-    public void setFiltroPales(List<Palet> filtroPales) {
-        this.filtroPales = filtroPales;
+    public void setFiltroLineas(List<PaletLinea> filtroLineas) {
+        this.filtroLineas = filtroLineas;
     }
 
     public List<Producto> getProductos() {
@@ -729,7 +668,7 @@ public class Main {
     // MUESTRA UNA TABLA DE PRODUCTOS (CRUD)
     public void rellenarTablaProductos() {
 
-        if (this.activeIndex == 0) {
+        if (this.activeIndex == 1) {
             PrimeFaces.current().executeScript("PF('dtProducts').clearFilters()");
             PrimeFaces.current().executeScript("PF('dtLugares').clearFilters()");
         }
@@ -744,13 +683,13 @@ public class Main {
 
         for (Producto prod : productos) {
             if (this.categoriasSearch.contains(prod.getCategoria().getId())) {
-                if (this.activeIndex == 0) {
+                if (this.activeIndex == 1) {
                     this.filtroProductos.add(prod);
                 } else {
                     this.chartProductosData.add(prod);
                 }
             } else if (this.categoriasSearch.isEmpty()) {
-                if (this.activeIndex == 0) {
+                if (this.activeIndex == 1) {
                     this.filtroProductos.add(prod);
                 } else {
                     this.chartProductosData.add(prod);
@@ -759,7 +698,7 @@ public class Main {
         }
 
         if (this.rangoInicio != null && this.rangoFin != null) {
-            if (this.activeIndex == 0) {
+            if (this.activeIndex == 1) {
                 this.filtroProductos = this.filtroProductos.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
                         || producto.getFechaLanz().equals(this.rangoFin)
                         || (producto.getFechaLanz().after(this.rangoInicio) && producto.getFechaLanz().before(this.rangoFin)))
@@ -772,7 +711,7 @@ public class Main {
             }
 
         } else if (this.rangoInicio != null) {
-            if (this.activeIndex == 0) {
+            if (this.activeIndex == 1) {
                 this.filtroProductos = this.filtroProductos.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoInicio)
                         || (producto.getFechaLanz().after(this.rangoInicio)))
                         .collect(Collectors.toList());
@@ -783,7 +722,7 @@ public class Main {
             }
 
         } else if (this.rangoFin != null) {
-            if (this.activeIndex == 0) {
+            if (this.activeIndex == 1) {
                 this.filtroProductos = this.filtroProductos.stream().filter(producto -> producto.getFechaLanz().equals(this.rangoFin)
                         || (producto.getFechaLanz().before(this.rangoFin)))
                         .collect(Collectors.toList());
@@ -794,7 +733,7 @@ public class Main {
             }
         }
 
-        if (this.activeIndex == 0) {
+        if (this.activeIndex == 1) {
             productosData.sort(Comparator.comparing(Producto::getPosicion));
 
             lazyModel = new LazyProductosDataModel(productosData);
@@ -831,7 +770,7 @@ public class Main {
         nuevo = isNew;
         show = justShow;
 
-        if (this.activeIndex == 1) {
+        if (this.activeIndex == 2) {
             // Creación de nuevo de los Chart
             createLineModel();
             createDonutModel();
@@ -889,7 +828,7 @@ public class Main {
                     case "correcto":
                         this.productos.add(this.selectedProducto);
                         this.productosData.add(this.selectedProducto);
-                        if (this.activeIndex == 0) {
+                        if (this.activeIndex == 1) {
 
                             if (this.categoriasSearch.contains(selectedProducto.getCategoria().getId())) {
                                 this.filtroProductos.add(this.selectedProducto);
@@ -897,7 +836,7 @@ public class Main {
                                 this.filtroProductos.add(this.selectedProducto);
                             }
 
-                        } else if (this.activeIndex == 1) {
+                        } else if (this.activeIndex == 2) {
                             this.chartProductosData.add(this.selectedProducto);
                         }
                         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Producto Añadido Correctamente", ""));
@@ -949,7 +888,7 @@ public class Main {
             }
         }
 
-        if (this.activeIndex == 1) {
+        if (this.activeIndex == 2) {
             // Creación de nuevo del Chart
             createLineModel();
             createDonutModel();
@@ -972,7 +911,7 @@ public class Main {
         this.filtroProductos.remove(p);
         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Producto Eliminado", ""));
 
-        if (this.activeIndex == 1) {
+        if (this.activeIndex == 2) {
             // Creación de nuevo del Chart
             createLineModel();
             createDonutModel();
@@ -986,7 +925,7 @@ public class Main {
         this.selectedProductos = null;
         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage("Productos eliminados"));
 
-        if (this.activeIndex == 1) {
+        if (this.activeIndex == 2) {
             // Creación de nuevo de los Chart
             createLineModel();
             createDonutModel();
@@ -1735,7 +1674,7 @@ public class Main {
                 }
 
                 if (!nuevosProductos.isEmpty()) {
-                    List<String> prods = new ArrayList<>();
+                    List<Integer> prods = new ArrayList<>();
                     for (Producto nuevoProd : nuevosProductos) {
                         if (!this.filtroProductos.isEmpty() || !this.chartProductosData.isEmpty()) {
                             boolean enFecha = true;
@@ -1784,7 +1723,7 @@ public class Main {
                         }
 
                         this.productosData.add(nuevoProd);
-                        prods.add(nuevoProd.getNombre());
+                        prods.add(nuevoProd.getCodigo());
                     }
 
                     productosData.sort(Comparator.comparing(Producto::getPosicion));
@@ -1845,26 +1784,79 @@ public class Main {
         }
     }
 
-    // MUESTRA UNA TABLA DE PRODUCTOS (CRUD)
-    public void rellenarTablaPales() {
+    // BUSCAR PALET
+    public void emptyCheckSearchPalet() {
 
         PrimeFaces.current().executeScript("PF('dtPales').clearFilters()");
 
-        this.palesData = new ArrayList<>();
-        this.filtroPales = new ArrayList<>();
+        matriculaBuscada = matriculaBuscada.trim();
 
-        for (Palet palet : pales) {
-            this.palesData.add(palet);
+        if (matriculaBuscada != null && !matriculaBuscada.isEmpty()) {
+            searchPalet();
+        } else {
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Indique un SSCC", ""));
+            this.selectedPalet = null;
         }
     }
 
-    public List<String> autocompleteSSCC(String consulta) {
-        String consultaMinus = consulta.toLowerCase();
-        List<String> SSCCList = new ArrayList<>();
-        for (Palet palet : pales) {
-            SSCCList.add(palet.getMatricula());
-        }
+    public void searchPalet() {
+        OkHttpClient datos = new OkHttpClient();
+        String url = "http://172.26.100.112:8080/ittws3/webresources/post";
 
-        return SSCCList.stream().filter(m -> m.toLowerCase().startsWith(consultaMinus)).collect(Collectors.toList());
+        String json = "{\n"
+                + "    \"almacen\": null,\n"
+                + "    \"centro\": null,\n"
+                + "    \"empresa\": null,\n"
+                + "    \"listaparametros\": [],\n"
+                + "    \"metodo\": \"getPalet\",\n"
+                + "    \"parametro1\": \"" + matriculaBuscada + "\",\n"
+                + "    \"parametro2\": \"1\",\n"
+                + "    \"parametro3\": \"1\",\n"
+                + "    \"parametro4\": \"\",\n"
+                + "    \"parametro5\": \"\",\n"
+                + "    \"parametro6\": \"\",\n"
+                + "    \"parametro7\": \"\",\n"
+                + "    \"parametros\": \"\",\n"
+                + "    \"password\": \"admin\",\n"
+                + "    \"tracking\": \"\",\n"
+                + "    \"usuario\": \"admin\",\n"
+                + "    \"version\": \"1.1.2.37\"\n"
+                + "}";
+
+        RequestBody requestBody = RequestBody.create(json, MediaType.parse("application/json"));
+
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build();
+
+        try {
+            Response response = datos.newCall(request).execute();
+
+            String responseData = response.body().string();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            try {
+                // Convierte el JSON a objeto Palet
+                PaletsRespuesta palet = objectMapper.readValue(responseData, PaletsRespuesta.class
+                );
+                System.out.println("Response: " + palet.getRespuesta().getMensaje());
+                pales = palet.getPalets();
+                if (!pales.isEmpty()) {
+                    selectedPalet = pales.get(0);
+                } else {
+                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Sin Resultado", ""));
+                    this.selectedPalet = null;
+                }
+
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
     }
 }
