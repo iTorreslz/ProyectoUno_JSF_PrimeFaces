@@ -1,0 +1,408 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+    <h:head>
+
+        <title>Artículos</title>
+
+        <!-- CSS STYLES -->
+
+        <style>
+            .ui-dialog-titlebar {
+                background: #0d96d6 !important;
+                color: white !important;
+            }
+            .ui-icon-closethick {
+                color: white !important;
+            }
+            .ui-dialog-title {
+                font-size: 25px !important;
+            }
+            .ui-datatable-header {
+                background-color: #2196F3 !important;
+                color: white !important;
+            }
+            .ui-button-excel {
+                background: #008000 !important;
+            }
+        </style>
+
+    </h:head>
+
+    <h:body>
+
+        <!-- FORM 01: PRINCIPAL -->
+
+        <h:form id="mainForm">
+
+            <p:toolbar>
+                <p:toolbarGroup>
+
+                    <div style="display: flex; flex-direction: column; margin-right: 10px;">
+                        <p:outputLabel value="Con Tercero Depósito" for="tercero_dep"/>
+                        <p:inputText id="tercero_dep" widgetVar="tercero_dep" value="#{Items.conTerceroDep}"/>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; margin-right: 10px;">
+                        <p:outputLabel value="Id Artículo" for="id_articulo"/>
+                        <p:inputText id="id_articulo" widgetVar="id_articulo" value="#{Items.idArticulo}"/>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; margin-right: 10px;">
+                        <p:outputLabel value="Descripción" for="descripcion"/>
+                        <p:inputText id="descripcion" widgetVar="descripcion" value="#{Items.descripcion}"/>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; margin-right: 10px;">
+                        <p:outputLabel value="Referencia" for="referencia"/>
+                        <p:inputText id="referencia" widgetVar="referencia" value="#{Items.referencia}"/>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; margin-right: 10px;">
+                        <p:outputLabel value="Código de barras" for="cod_barras"/>
+                        <p:inputText id="cod_barras" widgetVar="cod_barras" value="#{Items.codBarras}"/>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; margin-right: 10px;">
+                        <p:outputLabel value="Clasificación" for="clasificacion"/>
+                        <p:selectOneMenu id="clasificacion" widgetVar="clasificacion" value="#{Items.clasificacion}">
+                            <f:selectItem itemLabel="Todos" itemValue="-1"/>
+                            <f:selectItems value="#{Items.clasificaciones}" var="c" itemLabel="#{c.clasificacion}" itemValue="#{c.clasificacion}"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column">
+                        <p:outputLabel value="Estado" for="estado"/>
+                        <p:selectOneMenu id="estado" widgetVar="estado" value="-1">
+                            <f:selectItem itemLabel="Todos" itemValue="-1"/>
+                            <f:selectItem itemLabel="Activo" itemValue="0"/>
+                            <f:selectItem itemLabel="Baja" itemValue="1"/>
+                            <f:selectItem itemLabel="Baja Transitoria" itemValue="2"/>
+                        </p:selectOneMenu>
+                    </div>
+                </p:toolbarGroup>
+
+                <p:toolbarGroup align="right">
+
+                    <p:commandButton icon="pi pi-filter" styleClass="ui-button-success" style="margin-right: 10px" update=":dialogs:filter-items-content"
+                                     oncomplete="PF('filterItemsDialog').show()"/>
+                    <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" actionListener="#{Items.searchItems}" update="mainForm" style="margin-right: 10px"/>
+                    <p:commandButton icon="pi pi-clone" styleClass="ui-button-info"/>
+
+                </p:toolbarGroup>
+
+            </p:toolbar>
+
+            <!-- TABLA DE ARTÍCULOS -->
+
+            <p:dataTable var="articulo" value="#{Items.articulos}" lazy="true" id="dtArticulos" scrollable="true" style="margin-top: 20px;">
+
+                <f:facet name="header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Total de Artículos</span>
+
+                        <div class="ui-input-icon-left">
+                            <i class="pi pi-search" />
+                            <p:inputText id="globalFilter" widgetVar="globalFilter" style="margin-right: 5px;"
+                                         placeholder="Search" class="pi pi-search"/>
+                            <p:commandButton icon="pi pi-file-excel" styleClass="ui-button-excel" style="margin-right: 10px"/>
+                            <p:outputLabel rendered="true">
+                                Total #{Items.articulos != null ? Items.articulos.size() : 0}
+                            </p:outputLabel>
+                        </div>
+
+                    </div>
+                </f:facet>
+
+                <p:column headerText="Artículo" width="100px">
+                    <h:outputText value="#{articulo.idArticulo}" />
+                </p:column>
+                <p:column headerText="Referencia" width="220px">
+                    <h:outputText value="#{articulo.referencia}" />
+                </p:column>
+                <p:column headerText="Descripción" width="420px">
+                    <h:outputText value="#{articulo.descripcion}" />
+                </p:column>
+                <p:column headerText="Código de barras" width="130px">
+                    <h:outputText value="#{articulo.codigoBarras}" />
+                </p:column>
+                <p:column headerText="Id Artículo Depósito" width="100px">
+                    <h:outputText value="#{articulo.idArticuloDeposito}" />
+                </p:column>
+                <p:column headerText="Fecha de Alta" width="220px">
+                    <h:outputText value="#{articulo.fechaAlta}" />
+                </p:column>
+                <p:column headerText="Marca" width="125px">
+                    <h:outputText value="#{articulo.marcaNombre}" />
+                </p:column>
+                <p:column headerText="Familia" width="120px">
+                    <h:outputText value="#{articulo.familia}" />
+                </p:column>
+                <p:column headerText="Fecha Ult. Modif." width="220px">
+                    <h:outputText value="#{articulo.fechaUltModif}" />
+                </p:column>
+                <p:column headerText="Lotes" width="100px">
+                    <h:outputText value="#{articulo.controlLotes}" />
+                </p:column>
+                <p:column headerText="Caduc." width="100px">
+                    <h:outputText value="#{articulo.controlCaducidad}" />
+                </p:column>
+                <p:column headerText="Control Seriado" width="100px">
+                    <h:outputText value="#{articulo.controlSeries}" />
+                </p:column>
+                <p:column headerText="Estado" width="220px">
+                    <h:outputText value="#{articulo.estadoTexto}" />
+                </p:column>
+                <p:column headerText="B.V." width="50px">
+                    <h:outputText value="#{articulo.bloqueoVentas}" />
+                </p:column>
+                <p:column headerText="Usuario Último Bloqueo Ventas" width="300px">
+                    <h:outputText value="#{articulo.usuarioUltBloqueoVentas}" />
+                </p:column>
+                <p:column headerText="Fecha Último Bloqueo Ventas" width="300px">
+                    <h:outputText value="#{articulo.fechaUltBloqueoVentas}" />
+                </p:column>
+                <p:column headerText="B.C." width="50px">
+                    <h:outputText value="#{articulo.bloqueoCompras}" />
+                </p:column>
+                <p:column headerText="Grupo Art." width="100px">
+                    <h:outputText value="#{articulo.articuloGrupo}" />
+                </p:column>
+                <p:column headerText="Tipo Picking" width="160px">
+                    <h:outputText value="#{articulo.idTipoPicking}" />
+                </p:column>
+                <p:column headerText="Art. Clasificación" width="200px">
+                    <h:outputText value="#{articulo.idArticuloClasificacion}" />
+                </p:column>
+                <p:column headerText="Clasificación" width="150px">
+                    <h:outputText value="#{articulo.idClasificacion}" />
+                </p:column>
+                <p:column headerText="Con Etiquetas" width="100px">
+                    <h:outputText value="#{articulo.etiqueta}" />
+                </p:column>
+                <p:column headerText="Etiq. Portuguesa" width="140px">
+                    <h:outputText value="#{articulo.etiquetaProtuguesa}" />
+                </p:column>
+                <p:column headerText="Etiquetado Port." width="130px">
+                    <h:outputText value="#{articulo.etiquetadoPortugues}" />
+                </p:column>
+                <p:column headerText="Etiq. Italiana" width="130px">
+                    <h:outputText value="#{articulo.etiquetaItaliana}" />
+                </p:column>
+                <p:column headerText="Etiquetado Ita. " width="140px">
+                    <h:outputText value="#{articulo.etiquetadoItaliano}" />
+                </p:column>
+                <p:column headerText="Etiq. Europea" width="130px">
+                    <h:outputText value="#{articulo.etiquetaEuropea}" />
+                </p:column>
+                <p:column headerText="Propiedad de" width="220px">
+                    <h:outputText value="#{articulo.idUsuarioCreacion}" />
+                </p:column>
+                <p:column headerText="Pndte. Verificar" width="130px">
+                    <h:outputText value="#{articulo.pendienteVerificar}" />
+                </p:column>
+                <p:column headerText="Fecha Verificación" width="160px">
+                    <h:outputText value="#{articulo.fechaUltimaVerificacion!=null}" />
+                </p:column>
+                <p:column headerText="Altura (cm)" width="210px">
+                    <h:outputText value="#{articulo.alto}" />
+                </p:column>
+                <p:column headerText="Ancho (cm)" width="210px">
+                    <h:outputText value="#{articulo.ancho}" />
+                </p:column>
+                <p:column headerText="Largo (cm)" width="200px">
+                    <h:outputText value="#{articulo.largo}" />
+                </p:column>
+                <p:column headerText="Peso Neto (gr)" width="200px">
+                    <h:outputText value="#{articulo.pesoNeto}" />
+                </p:column>
+                <p:column headerText="Volumen Neto (cm3)" width="220px">
+                    <h:outputText value="#{articulo.volumenNeto}" />
+                </p:column>
+                <p:column headerText="Peso Bruto (gr)" width="200px">
+                    <h:outputText value="#{articulo.pesoBruto}" />
+                </p:column>
+                <p:column headerText="Volumen Bruto (cm3)" width="210px">
+                    <h:outputText value="#{articulo.volumen}" />
+                </p:column>
+                <p:column headerText="Preventa" width="180px">
+                    <h:outputText value="#{articulo.preventa}" />
+                </p:column>
+            </p:dataTable>
+
+        </h:form>
+
+        <!-- FORM 02: DIÁLOGOS -->
+
+        <h:form id="dialogs">
+
+            <!-- DIALOG DE FILTROS DE BÚSQUEDA -->
+
+            <p:dialog header="Seleccione Filtros" showEffect="fade" modal="true" id="filterItemsDialog" widgetVar="filterItemsDialog" responsive="true">
+
+                <p:outputPanel id="filter-items-content" class="ui-fluid" style="display: flex; flex-direction: row; flex-wrap: wrap; width: 600px">
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="bloqueo" style="font-size: 14px">Bloqueo</p:outputLabel>
+                        <p:selectOneMenu id="bloqueo" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Ninguno"/>
+                            <f:selectItem itemValue="1" itemLabel="Bloqueo Ventas"/>
+                            <f:selectItem itemValue="2" itemLabel="Bloqueo Compras"/>
+                            <f:selectItem itemValue="3" itemLabel="Ambos"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="grupo_articulos" style="font-size: 14px">Grupo Artículos</p:outputLabel>
+                        <p:selectOneMenu id="grupo_articulos" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="No"/>
+                            <f:selectItem itemValue="1" itemLabel="Kit"/>
+                            <f:selectItem itemValue="2" itemLabel="Pack"/>
+                            <f:selectItem itemValue="3" itemLabel="Lote"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="etiqueta_de" style="font-size: 14px">Etiqueta de</p:outputLabel>
+                        <p:selectOneMenu id="etiqueta_de" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Sin etiqueta"/>
+                            <f:selectItem itemValue="-2" itemLabel="Todos"/>
+                            <f:selectItems value="#{Items.paises}" var="p" itemLabel="#{p.nombre}" itemValue="#{p.idPais}"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-bottom: 10px">
+                        <p:outputLabel for="etiquetado" style="font-size: 14px">Etiquetado</p:outputLabel>
+                        <p:selectOneMenu id="etiquetado" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Sin etiqueta"/>
+                            <f:selectItem itemValue="-2" itemLabel="Todos"/>
+                            <f:selectItems value="#{Items.paises}" var="p" itemLabel="#{p.nombre}" itemValue="#{p.idPais}"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="control_lote" style="font-size: 14px">Control de Lote</p:outputLabel>
+                        <p:selectOneMenu id="control_lote" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="No"/>
+                            <f:selectItem itemValue="1" itemLabel="Sí"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="control_caducidad" style="font-size: 14px">Control de Caducidad</p:outputLabel>
+                        <p:selectOneMenu id="control_caducidad" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="No"/>
+                            <f:selectItem itemValue="1" itemLabel="Sí"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="pendiente_verif" style="font-size: 14px">Pendiente Verificación</p:outputLabel>
+                        <p:selectOneMenu id="pendiente_verif" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="No"/>
+                            <f:selectItem itemValue="1" itemLabel="Sí"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-bottom: 10px">
+                        <p:outputLabel for="fecha_ult_modif" style="font-size: 14px">Fecha Ult. Modif.</p:outputLabel>
+                        <p:selectOneMenu id="fecha_ult_modif" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="Con Fecha"/>
+                            <f:selectItem itemValue="1" itemLabel="Sin Fecha"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="peso_bruto" style="font-size: 14px">Peso Bruto</p:outputLabel>
+                        <p:selectOneMenu id="peso_bruto" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="Con Peso"/>
+                            <f:selectItem itemValue="1" itemLabel="Sin Peso"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="volumen_bruto" style="font-size: 14px">Volumen Bruto</p:outputLabel>
+                        <p:selectOneMenu id="volumen_bruto" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="Con Volumen"/>
+                            <f:selectItem itemValue="1" itemLabel="Sin Volumen"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="control_series" style="font-size: 14px">Control Series</p:outputLabel>
+                        <p:selectOneMenu id="control_series" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="No"/>
+                            <f:selectItem itemValue="1" itemLabel="Solo en ventas"/>
+                            <f:selectItem itemValue="2" itemLabel="Lote Unitario"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-bottom: 10px">
+                        <p:outputLabel for="tipo_articulo" style="font-size: 14px">Tipo Artículo</p:outputLabel>
+                        <p:selectOneMenu id="tipo_articulo" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="Sin asignar"/>
+                            <f:selectItems value="#{Items.tiposArticulo}" var="t" itemLabel="#{t.descripcion}" itemValue="#{t.idTipoArticulo}"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="stock" style="font-size: 14px">Stock</p:outputLabel>
+                        <p:selectOneMenu id="stock" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="1" itemLabel="Con Stock"/>
+                            <f:selectItem itemValue="0" itemLabel="Sin Stock"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="preventa" style="font-size: 14px">Preventa</p:outputLabel>
+                        <p:selectOneMenu id="preventa" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItem itemValue="0" itemLabel="No"/>
+                            <f:selectItem itemValue="1" itemLabel="Sí"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="tipo_picking" style="font-size: 14px">Tipo Picking</p:outputLabel>
+                        <p:selectOneMenu id="tipo_picking" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItems value="#{Items.tiposPicking}" var="t" itemLabel="#{t.descripcion}" itemValue="#{t.idTipoPicking}"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-bottom: 10px">
+                        <p:outputLabel for="art_clasificacion" style="font-size: 14px">Art. Clasificación</p:outputLabel>
+                        <p:selectOneMenu id="art_clasificacion" value="-1" styleClass="ui-custom-filter" style="width: 130px">
+                            <f:selectItem itemValue="-1" itemLabel="Todos"/>
+                            <f:selectItems value="#{Items.articulosClasif}" var="c" itemLabel="#{c.descripcion}" itemValue="#{c.idArticuloClasificacion}"/>
+                        </p:selectOneMenu>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="max_peso_bruto" style="font-size: 14px;">Mín. Peso Bruto</p:outputLabel>
+                        <p:inputNumber id="max_peso_bruto" value="0" style="width: 130px;" decimalPlaces="3" minValue="0" maxValue="999999999.999"/>
+                    </div>
+
+                    <div class="field" style="display: flex; flex-direction: column; margin-right: 10px; margin-bottom: 10px">
+                        <p:outputLabel for="min_peso_bruto" style="font-size: 14px">Max. Peso Bruto</p:outputLabel>
+                        <p:inputNumber id="min_peso_bruto" value="0" style="width: 130px;" decimalPlaces="3" minValue="0" maxValue="999999999.999"/>
+                    </div>
+
+                </p:outputPanel>
+            </p:dialog>
+
+        </h:form>
+
+    </h:body>
+</html>
