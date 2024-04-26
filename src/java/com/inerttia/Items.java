@@ -1,22 +1,32 @@
 package com.inerttia;
 
 import es.inerttia.ittws.controllers.ArticuloClasificacionController;
-import es.inerttia.ittws.controllers.ArticuloController;
 import es.inerttia.ittws.controllers.ClasificacionController;
+import es.inerttia.ittws.controllers.FamiliaController;
+import es.inerttia.ittws.controllers.MarcaController;
+import es.inerttia.ittws.controllers.NivelClasificacionController;
 import es.inerttia.ittws.controllers.PaisController;
+import es.inerttia.ittws.controllers.TerceroController;
 import es.inerttia.ittws.controllers.TipoArticuloController;
 import es.inerttia.ittws.controllers.TipoPickingController;
 import es.inerttia.ittws.controllers.entities.ArticuloClasificacion;
 import es.inerttia.ittws.controllers.entities.Clasificacion;
+import es.inerttia.ittws.controllers.entities.Familia;
+import es.inerttia.ittws.controllers.entities.Marca;
+import es.inerttia.ittws.controllers.entities.NivelClasificacion;
 import es.inerttia.ittws.controllers.entities.Pais;
+import es.inerttia.ittws.controllers.entities.Tercero;
 import es.inerttia.ittws.controllers.entities.TipoArticulo;
 import es.inerttia.ittws.controllers.entities.TipoPicking;
 import es.inerttia.ittws.controllers.entities.custom.Articulo;
 import es.inerttia.ittwscomun.Configuracion;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
+import org.primefaces.PrimeFaces;
 
 /**
  *
@@ -31,11 +41,12 @@ public class Items {
     //------------------------------------------------------------------------//
     // LAZY TABLE
     private LazyProductosDataModel lazyItems;
-    
+
     // ARTICULOS
     private List<Articulo> articulos;
 
-    private int conTerceroDep;
+    private List<Tercero> conTerceroDep;
+    private List<Tercero> terceros;
     private int idArticulo;
     private String descripcion;
     private String referencia;
@@ -45,8 +56,11 @@ public class Items {
     private int estado;
 
     private int familia;
+    private List<Familia> familias;
     private int marca;
+    private List<Marca> marcas;
     private int nivelesClasificacion;
+    private List<NivelClasificacion> niveles;
     private int bloqueo;
     private int grupoArticulos;
     private int etiquetaDe;
@@ -76,23 +90,28 @@ public class Items {
     //
     @PostConstruct
     public void init() {
-        Configuracion conf = new Configuracion();
-        ArticuloController ctl = new ArticuloController(conf);
-//        ctl.getArticulosConsultaGeneral(0, 0, idPaisEtiquetado, idArticulo, descripcion, referencia, codigoBarras, idClasificacion,
-//                0, 0, 0, terceros, familias, marcas, niveles, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, idPaisEtiqueta, 0, 0, 0, 0);
 
         clasificacion = "-1";
+
     }
 
     //------------------------------------------------------------------------//
     //                           MÉTODOS DEL BEAN                             //
     //------------------------------------------------------------------------//
     //
-    // BUSCAR ARTÍCULOS
-    public void searchItems() {
-        
+    // ABRE FILTER DIALOGS
+    public void findDialogs() {
+        Map<String, Object> options = new HashMap<>();
+        options.put("modal", true);
+        options.put("resizable", false);
+        options.put("draggable", false);
+        PrimeFaces.current().dialog().openDynamic("filterTables", options, null);
     }
     
+    public void ver(){
+        System.out.println(this.conTerceroDep.size());
+    }
+
     //------------------------------------------------------------------------//
     //                           GETTERS Y SETTERS                            //
     //------------------------------------------------------------------------//
@@ -113,12 +132,26 @@ public class Items {
         this.articulos = articulos;
     }
 
-    public int getConTerceroDep() {
+    public List<Tercero> getConTerceroDep() {
         return conTerceroDep;
     }
 
-    public void setConTerceroDep(int conTerceroDep) {
+    public void setConTerceroDep(List<Tercero> conTerceroDep) {
         this.conTerceroDep = conTerceroDep;
+    }
+
+    public List<Tercero> getTerceros() {
+        if (terceros == null) {
+            Configuracion conf = new Configuracion();
+            TerceroController ctl = new TerceroController(conf);
+            terceros = ctl.getTercerosDeposito();
+            conf.cerrar();
+        }
+        return terceros;
+    }
+
+    public void setTerceros(List<Tercero> terceros) {
+        this.terceros = terceros;
     }
 
     public int getIdArticulo() {
@@ -191,6 +224,20 @@ public class Items {
         this.familia = familia;
     }
 
+    public List<Familia> getFamilias() {
+        if (familias == null) {
+            Configuracion conf = new Configuracion();
+            FamiliaController ctl = new FamiliaController(conf);
+            familias = ctl.getFamiliasSeleccion();
+            conf.cerrar();
+        }
+        return familias;
+    }
+
+    public void setFamilias(List<Familia> familias) {
+        this.familias = familias;
+    }
+
     public int getMarca() {
         return marca;
     }
@@ -199,12 +246,40 @@ public class Items {
         this.marca = marca;
     }
 
+    public List<Marca> getMarcas() {
+        if (marcas == null) {
+            Configuracion conf = new Configuracion();
+            MarcaController ctl = new MarcaController(conf);
+            marcas = ctl.getMarcasSeleccion();
+            conf.cerrar();
+        }
+        return marcas;
+    }
+
+    public void setMarcas(List<Marca> marcas) {
+        this.marcas = marcas;
+    }
+
     public int getNivelesClasificacion() {
         return nivelesClasificacion;
     }
 
     public void setNivelesClasificacion(int nivelesClasificacion) {
         this.nivelesClasificacion = nivelesClasificacion;
+    }
+
+    public List<NivelClasificacion> getNiveles() {
+        if (niveles == null) {
+            Configuracion conf = new Configuracion();
+            NivelClasificacionController ctl = new NivelClasificacionController(conf);
+            niveles = ctl.getNivelesClasificacion();
+            conf.cerrar();
+        }
+        return niveles;
+    }
+
+    public void setNiveles(List<NivelClasificacion> niveles) {
+        this.niveles = niveles;
     }
 
     public int getBloqueo() {
