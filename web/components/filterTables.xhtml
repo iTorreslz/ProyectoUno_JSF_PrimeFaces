@@ -4,18 +4,59 @@
       xmlns:f="http://xmlns.jcp.org/jsf/core">
 
     <h:head>
-        <title>Seleccione una o varias opciones</title>
+        <title>Selección</title>
     </h:head>
 
     <h:body>
-        
+
         <h:form id="dialogMainForm">
             <!-- TABLA DE FILTROS -->
-            <p:dataTable var="tercero" selectionMode="multiple" value="#{Items.terceros}" id="dtFilterTerceros"
-                         style="margin-top: 20px;" rowKey="#{tercero.idTercero}" rowSelectMode="add" selection="#{FilterDialog.conTerceroDep}">
+            <p:dataTable var="tercero" value="#{FilterDialog.conTerceroDep}" id="dtFilterTerceros" rendered="#{FilterDialog.conTerceroDep ne null}"
+                         style="margin-top: 20px;" rowKey="#{tercero.idTercero}" rowSelectMode="add" selection="#{FilterDialog.tercerosSelected}">
 
-                <p:column headerText="Lista de TERCEROS" width="100px">
+                <p:ajax event="rowSelect" update="dialogMainForm" />
+                <p:ajax event="rowUnselect" update="dialogMainForm" />
+
+                <p:column selectionMode="multiple" exportable="false" width="10px" />
+
+                <p:column headerText="Lista de TERCEROS">
                     <h:outputText value="#{tercero.nombreComercial}" />
+                </p:column>
+
+            </p:dataTable>
+
+            <!-- TABLA DE FILTROS -->
+            <p:dataTable var="familia" selectionMode="multiple" value="#{FilterDialog.familias}" id="dtFilterFamilias" rendered="#{FilterDialog.familias ne null}"
+                         style="margin-top: 20px;" rowKey="#{familia.idFamilia}" rowSelectMode="add" selection="#{FilterDialog.familiasSelected}" paginator="true" rows="10"
+                         paginatorPosition="bottom" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                         currentPageReportTemplate="{startRecord}-{endRecord} de {totalRecords} familias" pageLinks="5">
+
+                <p:column headerText="Lista de FAMILIAS" width="100px">
+                    <h:outputText value="#{familia.nombre}" />
+                </p:column>
+
+            </p:dataTable>
+
+            <!-- TABLA DE FILTROS -->
+            <p:dataTable var="marca" selectionMode="multiple" value="#{FilterDialog.marcas}" id="dtFilterMarcas" rendered="#{FilterDialog.marcas ne null}"
+                         style="margin-top: 20px;" rowKey="#{marca.idMarca}" rowSelectMode="add" selection="#{FilterDialog.marcasSelected}" paginator="true" rows="10"
+                         paginatorPosition="bottom" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                         currentPageReportTemplate="{startRecord}-{endRecord} de {totalRecords} marcas" pageLinks="5">
+
+                <p:column headerText="Lista de MARCAS" width="100px">
+                    <h:outputText value="#{marca.nombre}" />
+                </p:column>
+
+            </p:dataTable>
+
+            <!-- TABLA DE FILTROS -->
+            <p:dataTable var="nivel_clasif" selectionMode="multiple" value="#{FilterDialog.nivelesClasificacion}" id="dtFilterNivelesClasif" rendered="#{FilterDialog.nivelesClasificacion ne null}"
+                         style="margin-top: 20px;" rowKey="#{nivel_clasif.idNivelClasificacion}" rowSelectMode="add" selection="#{FilterDialog.nivelesClasifSelected}" paginator="true" rows="10"
+                         paginatorPosition="bottom" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                         currentPageReportTemplate="{startRecord}-{endRecord} de {totalRecords} niveles" pageLinks="5">
+
+                <p:column headerText="Lista de NIVELES DE CLASIFICACIÓN" width="100px">
+                    <h:outputText value="#{nivel_clasif.descripcion}" />
                 </p:column>
 
             </p:dataTable>

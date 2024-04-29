@@ -20,6 +20,7 @@ import es.inerttia.ittws.controllers.entities.TipoArticulo;
 import es.inerttia.ittws.controllers.entities.TipoPicking;
 import es.inerttia.ittws.controllers.entities.custom.Articulo;
 import es.inerttia.ittwscomun.Configuracion;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
 import org.primefaces.PrimeFaces;
+import org.primefaces.event.SelectEvent;
 
 /**
  *
@@ -45,7 +47,16 @@ public class Items {
     // ARTICULOS
     private List<Articulo> articulos;
 
-    private List<Tercero> conTerceroDep;
+    // SELECTED
+    private String terceroStringSelected;
+    private String familiaStringSelected;
+    private String marcaStringSelected;
+    private String nivelStringSelected;
+
+    // VENTANA
+    private String ultimaVentana;
+
+    private List<Tercero> tercerosSelected;
     private List<Tercero> terceros;
     private int idArticulo;
     private String descripcion;
@@ -55,11 +66,11 @@ public class Items {
     private List<Clasificacion> clasificaciones;
     private int estado;
 
-    private int familia;
+    private List<Familia> familiasSelected;
     private List<Familia> familias;
-    private int marca;
+    private List<Marca> marcasSelected;
     private List<Marca> marcas;
-    private int nivelesClasificacion;
+    private List<NivelClasificacion> nivelesSelected;
     private List<NivelClasificacion> niveles;
     private int bloqueo;
     private int grupoArticulos;
@@ -90,9 +101,7 @@ public class Items {
     //
     @PostConstruct
     public void init() {
-
         clasificacion = "-1";
-
     }
 
     //------------------------------------------------------------------------//
@@ -100,16 +109,88 @@ public class Items {
     //------------------------------------------------------------------------//
     //
     // ABRE FILTER DIALOGS
-    public void findDialogs() {
+    public void findDialogs(String tipoVentana) {
         Map<String, Object> options = new HashMap<>();
         options.put("modal", true);
         options.put("resizable", false);
-        options.put("draggable", false);
-        PrimeFaces.current().dialog().openDynamic("filterTables", options, null);
+
+        Map<String, List<String>> params = new HashMap<>();
+        List<String> paramsVars = new ArrayList<>();
+        ultimaVentana = tipoVentana;
+        paramsVars.add(tipoVentana);
+        params.put("params", paramsVars);
+
+        PrimeFaces.current().dialog().openDynamic("filterTables", options, params);
     }
-    
-    public void ver(){
-        System.out.println(this.conTerceroDep.size());
+
+    public void clearFilter(String tipoFiltro) {
+        switch (tipoFiltro) {
+            case "tercero_dep":
+                this.terceroStringSelected = "";
+                this.tercerosSelected = null;
+                break;
+            case "familia":
+                this.familiaStringSelected = "";
+                this.familiasSelected = null;
+                break;
+            case "marca":
+                this.marcaStringSelected = "";
+                this.marcasSelected = null;
+                break;
+            case "niv_clasif":
+                this.nivelStringSelected = "";
+                this.nivelesSelected = null;
+                break;
+        }
+    }
+
+    public void afterCloseDialog(SelectEvent event) {
+        switch (ultimaVentana) {
+            case "tercero_dep":
+                terceroStringSelected = "";
+                if ((List<Tercero>) event.getObject() != null && !((List<Tercero>) event.getObject()).isEmpty()) {
+                    tercerosSelected = (List<Tercero>) event.getObject();
+                    if (tercerosSelected.size() > 1) {
+                        terceroStringSelected = "VARIOS";
+                    } else {
+                        terceroStringSelected = tercerosSelected.get(0).getNombreComercial();
+                    }
+                }
+                break;
+            case "familia":
+                familiaStringSelected = "";
+                if ((List<Familia>) event.getObject() != null && !((List<Familia>) event.getObject()).isEmpty()) {
+                    familiasSelected = (List<Familia>) event.getObject();
+                    if (familiasSelected.size() > 1) {
+                        familiaStringSelected = "VARIOS";
+                    } else {
+                        familiaStringSelected = familiasSelected.get(0).getNombre();
+                    }
+                }
+                break;
+            case "marca":
+                marcaStringSelected = "";
+                if ((List<Marca>) event.getObject() != null && !((List<Marca>) event.getObject()).isEmpty()) {
+                    marcasSelected = (List<Marca>) event.getObject();
+                    if (marcasSelected.size() > 1) {
+                        marcaStringSelected = "VARIOS";
+                    } else {
+                        marcaStringSelected = marcasSelected.get(0).getNombre();
+                    }
+                }
+                break;
+            case "niv_clasif":
+                nivelStringSelected = "";
+                if ((List<NivelClasificacion>) event.getObject() != null && !((List<NivelClasificacion>) event.getObject()).isEmpty()) {
+                    nivelesSelected = (List<NivelClasificacion>) event.getObject();
+                    if (nivelesSelected.size() > 1) {
+                        nivelStringSelected = "VARIOS";
+                    } else {
+                        nivelStringSelected = nivelesSelected.get(0).getDescripcion();
+                    }
+                }
+                break;
+        }
     }
 
     //------------------------------------------------------------------------//
@@ -132,12 +213,52 @@ public class Items {
         this.articulos = articulos;
     }
 
-    public List<Tercero> getConTerceroDep() {
-        return conTerceroDep;
+    public String getTerceroStringSelected() {
+        return terceroStringSelected;
     }
 
-    public void setConTerceroDep(List<Tercero> conTerceroDep) {
-        this.conTerceroDep = conTerceroDep;
+    public void setTerceroStringSelected(String terceroStringSelected) {
+        this.terceroStringSelected = terceroStringSelected;
+    }
+
+    public String getFamiliaStringSelected() {
+        return familiaStringSelected;
+    }
+
+    public void setFamiliaStringSelected(String familiaStringSelected) {
+        this.familiaStringSelected = familiaStringSelected;
+    }
+
+    public String getMarcaStringSelected() {
+        return marcaStringSelected;
+    }
+
+    public void setMarcaStringSelected(String marcaStringSelected) {
+        this.marcaStringSelected = marcaStringSelected;
+    }
+
+    public String getNivelStringSelected() {
+        return nivelStringSelected;
+    }
+
+    public void setNivelStringSelected(String nivelStringSelected) {
+        this.nivelStringSelected = nivelStringSelected;
+    }
+
+    public String getUltimaVentana() {
+        return ultimaVentana;
+    }
+
+    public void setUltimaVentana(String ultimaVentana) {
+        this.ultimaVentana = ultimaVentana;
+    }
+
+    public List<Tercero> getTercerosSelected() {
+        return tercerosSelected;
+    }
+
+    public void setTercerosSelected(List<Tercero> tercerosSelected) {
+        this.tercerosSelected = tercerosSelected;
     }
 
     public List<Tercero> getTerceros() {
@@ -216,12 +337,12 @@ public class Items {
         this.estado = estado;
     }
 
-    public int getFamilia() {
-        return familia;
+    public List<Familia> getFamiliasSelected() {
+        return familiasSelected;
     }
 
-    public void setFamilia(int familia) {
-        this.familia = familia;
+    public void setFamiliasSelected(List<Familia> familiasSelected) {
+        this.familiasSelected = familiasSelected;
     }
 
     public List<Familia> getFamilias() {
@@ -238,12 +359,12 @@ public class Items {
         this.familias = familias;
     }
 
-    public int getMarca() {
-        return marca;
+    public List<Marca> getMarcasSelected() {
+        return marcasSelected;
     }
 
-    public void setMarca(int marca) {
-        this.marca = marca;
+    public void setMarcasSelected(List<Marca> marcasSelected) {
+        this.marcasSelected = marcasSelected;
     }
 
     public List<Marca> getMarcas() {
@@ -260,12 +381,12 @@ public class Items {
         this.marcas = marcas;
     }
 
-    public int getNivelesClasificacion() {
-        return nivelesClasificacion;
+    public List<NivelClasificacion> getNivelesSelected() {
+        return nivelesSelected;
     }
 
-    public void setNivelesClasificacion(int nivelesClasificacion) {
-        this.nivelesClasificacion = nivelesClasificacion;
+    public void setNivelesSelected(List<NivelClasificacion> nivelesSelected) {
+        this.nivelesSelected = nivelesSelected;
     }
 
     public List<NivelClasificacion> getNiveles() {

@@ -42,9 +42,11 @@
                     <div style="display: flex; flex-direction: column; margin-right: 10px;">
                         <p:outputLabel value="Con Tercero Depósito" for="tercero_dep"/>
                         <div class="ui-inputgroup">
-                            <p:inputText id="tercero_dep" widgetVar="tercero_dep" value="#{Items.conTerceroDep}"/>
-                            <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" style="width: 32px;" actionListener="#{Items.findDialogs}"/>
-                            <p:commandButton icon="pi pi-times" styleClass="ui-button-danger" style="width: 32px;" actionListener="#{Items.ver}"/>
+                            <p:inputText id="tercero_dep" widgetVar="tercero_dep" value="#{Items.terceroStringSelected}" disabled="true"/>
+                            <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" style="width: 32px;" actionListener="#{Items.findDialogs('tercero_dep')}" >
+                                <p:ajax event="dialogReturn" listener="#{Items.afterCloseDialog}" update="mainForm"/>
+                            </p:commandButton>
+                            <p:commandButton icon="pi pi-times" styleClass="ui-button-danger" style="width: 32px;" actionListener="#{Items.clearFilter('tercero_dep')}" update="mainForm:tercero_dep"/>
                         </div>
                     </div>
 
@@ -91,7 +93,7 @@
 
                     <p:commandButton icon="pi pi-filter" styleClass="ui-button-success" style="margin-right: 10px" update=":dialogs:filter-items-content"
                                      oncomplete="PF('filterItemsDialog').show()"/>
-                    <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" actionListener="#{Items.searchItems}" update="mainForm" style="margin-right: 10px"/>
+                    <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" actionListener="#{Items.searchItems}" style="margin-right: 10px"/>
                     <p:commandButton icon="pi pi-clone" styleClass="ui-button-info"/>
 
                 </p:toolbarGroup>
@@ -251,9 +253,11 @@
 
                             <p:outputLabel for="familia" style="font-size: 14px;">Familia</p:outputLabel>
                             <div class="ui-inputgroup">
-                                <p:inputText id="familia" widgetVar="familia" value="#{Items.familia}" style="width: 70%;"/>
-                                <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" style="width: 32px;" actionListener="#{Items.findDialogs}"/>
-                                <p:commandButton icon="pi pi-times" styleClass="ui-button-danger" style="width: 32px;"/>
+                                <p:inputText id="familia" widgetVar="familia" value="#{Items.familiaStringSelected}" style="width: 70%;" disabled="true"/>
+                                <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" style="width: 32px;" actionListener="#{Items.findDialogs('familia')}" >
+                                    <p:ajax event="dialogReturn" listener="#{Items.afterCloseDialog}" update="dialogs:familia"/>
+                                </p:commandButton>
+                                <p:commandButton icon="pi pi-times" styleClass="ui-button-danger" style="width: 32px;" actionListener="#{Items.clearFilter('familia')}" update="dialogs:familia"/>
                             </div>
 
                         </div>
@@ -261,9 +265,11 @@
 
                             <p:outputLabel for="marca" style="font-size: 14px;">Marca</p:outputLabel>
                             <div class="ui-inputgroup">
-                                <p:inputText id="marca" widgetVar="marca" value="#{Items.marca}" style="width: 70%;"/>
-                                <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" style="width: 32px;" actionListener="#{Items.findDialogs}"/>
-                                <p:commandButton icon="pi pi-times" styleClass="ui-button-danger" style="width: 32px;"/>
+                                <p:inputText id="marca" widgetVar="marca" value="#{Items.marcaStringSelected}" style="width: 70%;" disabled="true"/>
+                                <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" style="width: 32px;" actionListener="#{Items.findDialogs('marca')}" >
+                                    <p:ajax event="dialogReturn" listener="#{Items.afterCloseDialog}" update="marca"/>
+                                </p:commandButton>
+                                <p:commandButton icon="pi pi-times" styleClass="ui-button-danger" style="width: 32px;" actionListener="#{Items.clearFilter('marca')}" update="dialogs:marca"/>
                             </div>
 
                         </div>
@@ -271,9 +277,11 @@
 
                             <p:outputLabel for="niv_clasif" style="font-size: 14px;">Niveles Clasificación</p:outputLabel>
                             <div class="ui-inputgroup">
-                                <p:inputText id="niv_clasif" widgetVar="niv_clasif" value="#{Items.nivelesClasificacion}" style="width: 70%;"/>
-                                <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" style="width: 32px;" actionListener="#{Items.findDialogs}"/>
-                                <p:commandButton icon="pi pi-times" styleClass="ui-button-danger" style="width: 32px;"/>
+                                <p:inputText id="niv_clasif" widgetVar="niv_clasif" value="#{Items.nivelStringSelected}" style="width: 70%;" disabled="true"/>
+                                <p:commandButton icon="pi pi-search" styleClass="ui-button-primary" style="width: 32px;" actionListener="#{Items.findDialogs('niv_clasif')}" >
+                                    <p:ajax event="dialogReturn" listener="#{Items.afterCloseDialog}" update="dialogs:niv_clasif"/>
+                                </p:commandButton>
+                                <p:commandButton icon="pi pi-times" styleClass="ui-button-danger" style="width: 32px;" actionListener="#{Items.clearFilter('niv_clasif')}" update="dialogs:niv_clasif"/>
                             </div>
 
                         </div>
