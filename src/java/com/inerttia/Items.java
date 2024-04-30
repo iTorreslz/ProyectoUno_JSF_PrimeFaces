@@ -1,6 +1,7 @@
 package com.inerttia;
 
 import es.inerttia.ittws.controllers.ArticuloClasificacionController;
+import es.inerttia.ittws.controllers.ArticuloController;
 import es.inerttia.ittws.controllers.ClasificacionController;
 import es.inerttia.ittws.controllers.FamiliaController;
 import es.inerttia.ittws.controllers.MarcaController;
@@ -20,7 +21,9 @@ import es.inerttia.ittws.controllers.entities.TipoArticulo;
 import es.inerttia.ittws.controllers.entities.TipoPicking;
 import es.inerttia.ittws.controllers.entities.custom.Articulo;
 import es.inerttia.ittwscomun.Configuracion;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +45,7 @@ public class Items {
     //                               VARIABLES                                //
     //------------------------------------------------------------------------//
     // LAZY TABLE
-    private LazyProductosDataModel lazyItems;
+    private LazyArticulosDataModel lazyItems;
 
     // ARTICULOS
     private List<Articulo> articulos;
@@ -58,10 +61,10 @@ public class Items {
 
     private List<Tercero> tercerosSelected;
     private List<Tercero> terceros;
-    private int idArticulo;
+    private String idArticulo;
     private String descripcion;
     private String referencia;
-    private int codBarras;
+    private String codBarras;
     private String clasificacion;
     private List<Clasificacion> clasificaciones;
     private int estado;
@@ -74,9 +77,9 @@ public class Items {
     private List<NivelClasificacion> niveles;
     private int bloqueo;
     private int grupoArticulos;
-    private int etiquetaDe;
+    private String etiquetaDe;
     private List<Pais> paises;
-    private int etiquetado;
+    private String etiquetado;
     private int controlLote;
     private int controlCaducidad;
     private int pendienteVerificacion;
@@ -95,6 +98,12 @@ public class Items {
     private double maxPesoBruto;
     private double minPesoBruto;
 
+    // IDs STRING
+    String idStringTerceros;
+    String idStringFamilias;
+    String idStringMarcas;
+    String idStringNiveles;
+
     //------------------------------------------------------------------------//
     //                                  INIT                                  //
     //------------------------------------------------------------------------//
@@ -102,12 +111,41 @@ public class Items {
     @PostConstruct
     public void init() {
         clasificacion = "-1";
+        estado = -1;
+        bloqueo = -1;
+        grupoArticulos = -1;
+        etiquetaDe = "-1";
+        etiquetado = "-1";
+        controlLote = -1;
+        controlCaducidad = -1;
+        pendienteVerificacion = -1;
+        fechaUltModificacion = -1;
+        pesoBruto = -1;
+        volumenBruto = -1;
+        controlSeries = -1;
+        tipoArticulo = -1;
+        stock = -1;
+        preventa = -1;
+        tipoPicking = -1;
+        artClasificacion = -1;
+        minPesoBruto = -1;
+        maxPesoBruto = -1;
     }
 
     //------------------------------------------------------------------------//
     //                           MÉTODOS DEL BEAN                             //
     //------------------------------------------------------------------------//
     //
+    // FORMATEA UNA FECHA A "dd/MM/yyyy"
+    public String formatDate(Date fecha) {
+        if (fecha != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            String fechaFormateada = sdf.format(fecha);
+            return fechaFormateada;
+        }
+        return null;
+    }
+    
     // ABRE FILTER DIALOGS
     public void findDialogs(String tipoVentana) {
         Map<String, Object> options = new HashMap<>();
@@ -121,6 +159,64 @@ public class Items {
         params.put("params", paramsVars);
 
         PrimeFaces.current().dialog().openDynamic("filterTables", options, params);
+    }
+
+    public String getTercerosIDString() {
+        if (tercerosSelected != null && !tercerosSelected.isEmpty()) {
+            for (Tercero tercero : tercerosSelected) {
+                idStringTerceros += tercero.getIdTercero();
+            }
+            return idStringTerceros;
+        } else {
+            return null;
+        }
+    }
+
+    public String getFamiliasIDString() {
+        if (familiasSelected != null && !familiasSelected.isEmpty()) {
+            for (Familia familia : familiasSelected) {
+                idStringFamilias += familia.getIdFamilia();
+            }
+            return idStringFamilias;
+        } else {
+            return null;
+        }
+    }
+
+    public String getMarcasIDString() {
+        if (marcasSelected != null && !marcasSelected.isEmpty()) {
+            for (Marca marca : marcasSelected) {
+                idStringMarcas += marca.getIdMarca();
+            }
+            return idStringMarcas;
+        } else {
+            return null;
+        }
+    }
+
+    public String getNivelesIDString() {
+        if (nivelesSelected != null && !nivelesSelected.isEmpty()) {
+            for (NivelClasificacion nivel : nivelesSelected) {
+                idStringNiveles += nivel.getIdNivelClasificacion();
+            }
+            return idStringNiveles;
+        } else {
+            return null;
+        }
+
+    }
+
+    public void search() {
+        Configuracion conf = new Configuracion();
+        ArticuloController ctl = new ArticuloController(conf);
+        articulos = ctl.getArticulosConsultaGeneral(1, 1, etiquetado, idArticulo, descripcion, referencia, codBarras, clasificacion, estado, bloqueo, grupoArticulos,
+                getTercerosIDString(), getFamiliasIDString(), getMarcasIDString(), getNivelesIDString(), controlLote, controlSeries,
+                tipoArticulo, controlCaducidad, pendienteVerificacion, fechaUltModificacion, pesoBruto, volumenBruto, -1, stock, preventa, 0,
+                etiquetaDe, tipoPicking, artClasificacion, minPesoBruto, maxPesoBruto);
+
+        lazyItems = new LazyArticulosDataModel(articulos);
+
+        conf.cerrar();
     }
 
     public void clearFilter(String tipoFiltro) {
@@ -197,11 +293,11 @@ public class Items {
     //                           GETTERS Y SETTERS                            //
     //------------------------------------------------------------------------//
     //
-    public LazyProductosDataModel getLazyItems() {
+    public LazyArticulosDataModel getLazyItems() {
         return lazyItems;
     }
 
-    public void setLazyItems(LazyProductosDataModel lazyItems) {
+    public void setLazyItems(LazyArticulosDataModel lazyItems) {
         this.lazyItems = lazyItems;
     }
 
@@ -275,11 +371,11 @@ public class Items {
         this.terceros = terceros;
     }
 
-    public int getIdArticulo() {
+    public String getIdArticulo() {
         return idArticulo;
     }
 
-    public void setIdArticulo(int idArticulo) {
+    public void setIdArticulo(String idArticulo) {
         this.idArticulo = idArticulo;
     }
 
@@ -299,11 +395,11 @@ public class Items {
         this.referencia = referencia;
     }
 
-    public int getCodBarras() {
+    public String getCodBarras() {
         return codBarras;
     }
 
-    public void setCodBarras(int codBarras) {
+    public void setCodBarras(String codBarras) {
         this.codBarras = codBarras;
     }
 
@@ -419,11 +515,11 @@ public class Items {
         this.grupoArticulos = grupoArticulos;
     }
 
-    public int getEtiquetaDe() {
+    public String getEtiquetaDe() {
         return etiquetaDe;
     }
 
-    public void setEtiquetaDe(int etiquetaDe) {
+    public void setEtiquetaDe(String etiquetaDe) {
         this.etiquetaDe = etiquetaDe;
     }
 
@@ -441,11 +537,11 @@ public class Items {
         this.paises = paises;
     }
 
-    public int getEtiquetado() {
+    public String getEtiquetado() {
         return etiquetado;
     }
 
-    public void setEtiquetado(int etiquetado) {
+    public void setEtiquetado(String etiquetado) {
         this.etiquetado = etiquetado;
     }
 
@@ -601,5 +697,37 @@ public class Items {
 
     public void setMinPesoBruto(double minPesoBruto) {
         this.minPesoBruto = minPesoBruto;
+    }
+
+    public String getIdStringTerceros() {
+        return idStringTerceros;
+    }
+
+    public void setIdStringTerceros(String idStringTerceros) {
+        this.idStringTerceros = idStringTerceros;
+    }
+
+    public String getIdStringFamilias() {
+        return idStringFamilias;
+    }
+
+    public void setIdStringFamilias(String idStringFamilias) {
+        this.idStringFamilias = idStringFamilias;
+    }
+
+    public String getIdStringMarcas() {
+        return idStringMarcas;
+    }
+
+    public void setIdStringMarcas(String idStringMarcas) {
+        this.idStringMarcas = idStringMarcas;
+    }
+
+    public String getIdStringNiveles() {
+        return idStringNiveles;
+    }
+
+    public void setIdStringNiveles(String idStringNiveles) {
+        this.idStringNiveles = idStringNiveles;
     }
 }
