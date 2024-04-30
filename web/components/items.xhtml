@@ -118,7 +118,7 @@
                             <i class="pi pi-search" />
                             <p:inputText id="globalFilter" widgetVar="globalFilter" style="margin-right: 5px;"
                                          placeholder="Search" class="pi pi-search"/>
-                            <p:commandButton icon="pi pi-file-excel" styleClass="ui-button-excel" style="margin-right: 10px"/>
+                            <p:commandButton icon="pi pi-file-excel" styleClass="ui-button-excel" style="margin-right: 10px" rendered="#{Items.articulos.size() > 0}"/>
                             <p:outputLabel rendered="true">
                                 Total #{Items.articulos != null ? Items.articulos.size() : 0}
                             </p:outputLabel>
@@ -218,25 +218,39 @@
                     <p:selectBooleanCheckbox value="#{articulo.fechaUltimaVerificacion!=null}" disabled="true"/>
                 </p:column>
                 <p:column headerText="Altura (cm)" width="150px" style="text-align: right;">
-                    <h:outputText value="#{articulo.alto}" />
+                    <h:outputText value="#{articulo.alto}">
+                        <f:convertNumber pattern="#,##0.00"/>
+                    </h:outputText>
                 </p:column>
                 <p:column headerText="Ancho (cm)" width="210px" style="text-align: right;">
-                    <h:outputText value="#{articulo.ancho}" />
+                    <h:outputText value="#{articulo.ancho}">
+                        <f:convertNumber pattern="#,##0.00"/>
+                    </h:outputText>
                 </p:column>
                 <p:column headerText="Largo (cm)" width="200px" style="text-align: right;">
-                    <h:outputText value="#{articulo.largo}" />
+                    <h:outputText value="#{articulo.largo}">
+                        <f:convertNumber pattern="#,##0.00"/>
+                    </h:outputText>
                 </p:column>
                 <p:column headerText="Peso Neto (gr)" width="200px" style="text-align: right;">
-                    <h:outputText value="#{articulo.pesoNeto}" />
+                    <h:outputText value="#{articulo.pesoNeto}">
+                        <f:convertNumber pattern="#,##0.00"/>
+                    </h:outputText>
                 </p:column>
                 <p:column headerText="Volumen Neto (cm3)" width="220px" style="text-align: right;">
-                    <h:outputText value="#{articulo.volumenNeto}" />
+                    <h:outputText value="#{articulo.volumenNeto}">
+                        <f:convertNumber pattern="#,##0.00"/>
+                    </h:outputText>
                 </p:column>
                 <p:column headerText="Peso Bruto (gr)" width="200px" style="text-align: right;">
-                    <h:outputText value="#{articulo.pesoBruto}" />
+                    <h:outputText value="#{articulo.pesoBruto}">
+                        <f:convertNumber pattern="#,##0.00"/>
+                    </h:outputText>
                 </p:column>
                 <p:column headerText="Volumen Bruto (cm3)" width="210px" style="text-align: right;">
-                    <h:outputText value="#{articulo.volumen}" />
+                    <h:outputText value="#{articulo.volumen}">
+                        <f:convertNumber pattern="#,##0.00"/>
+                    </h:outputText>
                 </p:column>
                 <p:column headerText="Preventa" width="180px" style="text-align: center;">
                     <p:selectBooleanCheckbox value="#{articulo.preventa}" disabled="true"/>
@@ -455,15 +469,17 @@
                         </div>
 
                         <div class="field" style="display: flex; flex-direction: column; grid-row: 7; grid-column: 1;">
-                            <p:outputLabel for="max_peso_bruto" style="font-size: 14px;">Mín. Peso Bruto</p:outputLabel>
-                            <p:inputNumber id="max_peso_bruto" value="#{Items.maxPesoBruto}" style="width: 130px;" decimalPlaces="3" minValue="0" maxValue="999999999.999">
+                            <p:outputLabel for="min_peso_bruto" style="font-size: 14px;">Mín. Peso Bruto</p:outputLabel>
+                            <p:inputNumber id="min_peso_bruto" value="#{Items.minPesoBruto}" style="width: 130px;" decimalPlaces="2" minValue="0" maxValue="99999999.99"
+                                           decimalSeparator="," thousandSeparator=".">
                                 <p:ajax event="blur"/>
                             </p:inputNumber>
                         </div>
 
                         <div class="field" style="display: flex; flex-direction: column; grid-row: 7; grid-column: 2;">
-                            <p:outputLabel for="min_peso_bruto" style="font-size: 14px">Max. Peso Bruto</p:outputLabel>
-                            <p:inputNumber id="min_peso_bruto" value="#{Items.minPesoBruto}" style="width: 130px;" decimalPlaces="3" minValue="0" maxValue="999999999.999">
+                            <p:outputLabel for="max_peso_bruto" style="font-size: 14px">Max. Peso Bruto</p:outputLabel>
+                            <p:inputNumber id="max_peso_bruto" value="#{Items.maxPesoBruto}" style="width: 130px;" decimalPlaces="2" minValue="0" maxValue="99999999.99"
+                                           decimalSeparator="," thousandSeparator=".">
                                 <p:ajax event="blur"/>
                             </p:inputNumber>
                         </div>

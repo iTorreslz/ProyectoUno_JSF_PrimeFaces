@@ -86,6 +86,21 @@ public class FilterDialog {
     //------------------------------------------------------------------------//
     //
     // CIERRA DIALOG
+    public String setTitle() {
+        switch (ventana) {
+            case "tercero_dep":
+                return "Terceros Depósito";
+            case "familia":
+                return "Familias";
+            case "marca":
+                return "Marcas";
+            case "niv_clasif":
+                return "Niveles de Clasificación";
+            default:
+                return "";
+        }
+    }
+    
     public void closeDialog() {
         switch (ventana) {
             case "tercero_dep":

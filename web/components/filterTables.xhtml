@@ -4,7 +4,9 @@
       xmlns:f="http://xmlns.jcp.org/jsf/core">
 
     <h:head>
-        <title>Selección</title>
+        <title>
+            <h:outputText value="Selección de #{FilterDialog.setTitle()}" />
+        </title>
     </h:head>
 
     <h:body>
@@ -19,43 +21,58 @@
 
                 <p:column selectionMode="multiple" exportable="false" width="10px" />
 
-                <p:column headerText="Lista de TERCEROS">
+                <p:column>
                     <h:outputText value="#{tercero.nombreComercial}" />
                 </p:column>
 
             </p:dataTable>
 
             <!-- TABLA DE FILTROS -->
-            <p:dataTable var="familia" selectionMode="multiple" value="#{FilterDialog.familias}" id="dtFilterFamilias" rendered="#{FilterDialog.familias ne null}"
+            <p:dataTable var="familia" value="#{FilterDialog.familias}" id="dtFilterFamilias" rendered="#{FilterDialog.familias ne null}"
                          style="margin-top: 20px;" rowKey="#{familia.idFamilia}" rowSelectMode="add" selection="#{FilterDialog.familiasSelected}" paginator="true" rows="10"
                          paginatorPosition="bottom" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
-                         currentPageReportTemplate="{startRecord}-{endRecord} de {totalRecords} familias" pageLinks="5">
+                         currentPageReportTemplate="{startRecord}-{endRecord} de {totalRecords} niveles" pageLinks="5">
 
-                <p:column headerText="Lista de FAMILIAS" width="100px">
+                <p:ajax event="rowSelect" update="dialogMainForm" />
+                <p:ajax event="rowUnselect" update="dialogMainForm" />
+
+                <p:column selectionMode="multiple" exportable="false" width="10px" />
+
+                <p:column width="100px">
                     <h:outputText value="#{familia.nombre}" />
                 </p:column>
 
             </p:dataTable>
 
             <!-- TABLA DE FILTROS -->
-            <p:dataTable var="marca" selectionMode="multiple" value="#{FilterDialog.marcas}" id="dtFilterMarcas" rendered="#{FilterDialog.marcas ne null}"
+            <p:dataTable var="marca" value="#{FilterDialog.marcas}" id="dtFilterMarcas" rendered="#{FilterDialog.marcas ne null}"
                          style="margin-top: 20px;" rowKey="#{marca.idMarca}" rowSelectMode="add" selection="#{FilterDialog.marcasSelected}" paginator="true" rows="10"
                          paginatorPosition="bottom" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
-                         currentPageReportTemplate="{startRecord}-{endRecord} de {totalRecords} marcas" pageLinks="5">
+                         currentPageReportTemplate="{startRecord}-{endRecord} de {totalRecords} niveles" pageLinks="5">
 
-                <p:column headerText="Lista de MARCAS" width="100px">
+                <p:ajax event="rowSelect" update="dialogMainForm" />
+                <p:ajax event="rowUnselect" update="dialogMainForm" />
+
+                <p:column selectionMode="multiple" exportable="false" width="10px"  />
+
+                <p:column width="100px">
                     <h:outputText value="#{marca.nombre}" />
                 </p:column>
 
             </p:dataTable>
 
             <!-- TABLA DE FILTROS -->
-            <p:dataTable var="nivel_clasif" selectionMode="multiple" value="#{FilterDialog.nivelesClasificacion}" id="dtFilterNivelesClasif" rendered="#{FilterDialog.nivelesClasificacion ne null}"
+            <p:dataTable var="nivel_clasif" value="#{FilterDialog.nivelesClasificacion}" id="dtFilterNivelesClasif" rendered="#{FilterDialog.nivelesClasificacion ne null}"
                          style="margin-top: 20px;" rowKey="#{nivel_clasif.idNivelClasificacion}" rowSelectMode="add" selection="#{FilterDialog.nivelesClasifSelected}" paginator="true" rows="10"
                          paginatorPosition="bottom" paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
                          currentPageReportTemplate="{startRecord}-{endRecord} de {totalRecords} niveles" pageLinks="5">
 
-                <p:column headerText="Lista de NIVELES DE CLASIFICACIÓN" width="100px">
+                <p:ajax event="rowSelect" update="dialogMainForm" />
+                <p:ajax event="rowUnselect" update="dialogMainForm" />
+
+                <p:column selectionMode="multiple" exportable="false" width="10px" />
+
+                <p:column width="100px">
                     <h:outputText value="#{nivel_clasif.descripcion}" />
                 </p:column>
 
@@ -63,7 +80,7 @@
 
             <!-- BOTÓN GUARDAR -->
 
-            <p:commandButton value="Guardar" icon="pi pi-check" style="margin-top: 10px;" actionListener="#{FilterDialog.closeDialog}"/>
+            <p:commandButton value="Guardar" icon="pi pi-check" styleClass="ui-button-success" style="margin-top: 10px;" actionListener="#{FilterDialog.closeDialog}"/>
         </h:form>
 
     </h:body>

@@ -59,6 +59,15 @@ public class LazyArticulosDataModel extends LazyDataModel<Articulo> {
                 .limit(pageSize)
                 .collect(Collectors.toList());
 
+        // sort
+        if (!sortBy.isEmpty()) {
+            List<Comparator<Articulo>> comparators = sortBy.values().stream()
+                    .map(o -> new LazySorterArticulos(o.getField(), o.getOrder()))
+                    .collect(Collectors.toList());
+            Comparator<Articulo> cp = ComparatorUtils.chainedComparator(comparators); // from apache
+            articulos.sort(cp);
+        }
+
         return articulos;
     }
 

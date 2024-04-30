@@ -145,7 +145,7 @@ public class Items {
         }
         return null;
     }
-    
+
     // ABRE FILTER DIALOGS
     public void findDialogs(String tipoVentana) {
         Map<String, Object> options = new HashMap<>();
@@ -163,8 +163,13 @@ public class Items {
 
     public String getTercerosIDString() {
         if (tercerosSelected != null && !tercerosSelected.isEmpty()) {
-            for (Tercero tercero : tercerosSelected) {
-                idStringTerceros += tercero.getIdTercero();
+            idStringTerceros = "(";
+            for (int i = 0; i < tercerosSelected.size(); i++) {
+                if (i != (tercerosSelected.size() - 1)) {
+                    idStringTerceros += "'" + tercerosSelected.get(i).getIdTercero() + "',";
+                } else {
+                    idStringTerceros += "'" + tercerosSelected.get(i).getIdTercero() + "')";
+                }
             }
             return idStringTerceros;
         } else {
@@ -174,8 +179,13 @@ public class Items {
 
     public String getFamiliasIDString() {
         if (familiasSelected != null && !familiasSelected.isEmpty()) {
-            for (Familia familia : familiasSelected) {
-                idStringFamilias += familia.getIdFamilia();
+            idStringFamilias = "(";
+            for (int i = 0; i < familiasSelected.size(); i++) {
+                if (i != (familiasSelected.size() - 1)) {
+                    idStringFamilias += "'" + familiasSelected.get(i).getIdFamilia() + "',";
+                } else {
+                    idStringFamilias += "'" + familiasSelected.get(i).getIdFamilia() + "')";
+                }
             }
             return idStringFamilias;
         } else {
@@ -185,8 +195,13 @@ public class Items {
 
     public String getMarcasIDString() {
         if (marcasSelected != null && !marcasSelected.isEmpty()) {
-            for (Marca marca : marcasSelected) {
-                idStringMarcas += marca.getIdMarca();
+            idStringMarcas = "(";
+            for (int i = 0; i < marcasSelected.size(); i++) {
+                if (i != (marcasSelected.size() - 1)) {
+                    idStringMarcas += "'" + marcasSelected.get(i).getIdMarca()+ "',";
+                } else {
+                    idStringMarcas += "'" + marcasSelected.get(i).getIdMarca()+ "')";
+                }
             }
             return idStringMarcas;
         } else {
@@ -196,14 +211,18 @@ public class Items {
 
     public String getNivelesIDString() {
         if (nivelesSelected != null && !nivelesSelected.isEmpty()) {
-            for (NivelClasificacion nivel : nivelesSelected) {
-                idStringNiveles += nivel.getIdNivelClasificacion();
+            idStringNiveles = "(";
+            for (int i = 0; i < nivelesSelected.size(); i++) {
+                if (i != (nivelesSelected.size() - 1)) {
+                    idStringNiveles += "'" + nivelesSelected.get(i).getIdNivelClasificacion()+ "',";
+                } else {
+                    idStringNiveles += "'" + nivelesSelected.get(i).getIdNivelClasificacion()+ "')";
+                }
             }
             return idStringNiveles;
         } else {
             return null;
         }
-
     }
 
     public void search() {
