@@ -1,7 +1,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:f="http://xmlns.jcp.org/jsf/core"
-      xmlns:p="http://primefaces.org/ui">
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
     <h:head>
 
         <title>Artículos</title>
@@ -28,6 +29,9 @@
             }
             .ui-sortable-column-icon {
                 display: none !important;
+            }
+            .ui-datatable .ui-column-filter {
+                display: none;
             }
         </style>
 
@@ -104,158 +108,8 @@
             </p:toolbar>
 
             <!-- TABLA DE ARTÍCULOS -->
-
-            <p:dataTable var="articulo" value="#{Items.lazyItems}" lazy="true" id="dtArticulos" scrollable="true" style="margin-top: 20px;" virtualScroll="true" scrollRows="20"
-                         scrollHeight="600">
-
-                <p:ajax event="filter" update="mainForm:dtArticulos" />
-
-                <f:facet name="header">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span>Total de Artículos</span>
-
-                        <div class="ui-input-icon-left">
-                            <i class="pi pi-search" />
-                            <p:inputText id="globalFilter" widgetVar="globalFilter" style="margin-right: 5px;"
-                                         placeholder="Search" class="pi pi-search"/>
-                            <p:commandButton icon="pi pi-file-excel" styleClass="ui-button-excel" style="margin-right: 10px" rendered="#{Items.articulos.size() > 0}"/>
-                            <p:outputLabel rendered="true">
-                                Total #{Items.articulos != null ? Items.articulos.size() : 0}
-                            </p:outputLabel>
-                        </div>
-
-                    </div>
-                </f:facet>
-
-                <p:column headerText="Artículo" width="100px" sortBy="#{articulo.idArticulo}">
-                    <h:outputText value="#{articulo.idArticulo}" />
-                </p:column>
-                <p:column headerText="Referencia" width="150px" sortBy="#{articulo.referencia}">
-                    <h:outputText value="#{articulo.referencia}" />
-                </p:column>
-                <p:column headerText="Descripción" width="440px" sortBy="#{articulo.descripcion}">
-                    <h:outputText value="#{articulo.descripcion}" />
-                </p:column>
-                <p:column headerText="Código de barras" width="130px" sortBy="#{articulo.codigoBarras}">
-                    <h:outputText value="#{articulo.codigoBarras}" />
-                </p:column>
-                <p:column headerText="Id Artículo Depósito" width="153px" style="text-align: right;">
-                    <h:outputText value="#{articulo.idArticuloDeposito}" />
-                </p:column>
-                <p:column headerText="Fecha de Alta" width="220px" sortBy="#{articulo.fechaAlta}">
-                    <h:outputText value="#{Items.formatDate(articulo.fechaAlta)}" />
-                </p:column>
-                <p:column headerText="Marca" width="125px" sortBy="#{articulo.idMarca.nombre}">
-                    <h:outputText value="#{articulo.idMarca.nombre}" />
-                </p:column>
-                <p:column headerText="Familia" width="120px" sortBy="#{articulo.idFamilia.nombre}">
-                    <h:outputText value="#{articulo.idFamilia.nombre}" />
-                </p:column>
-                <p:column headerText="Fecha Ult. Modif." width="220px" sortBy="#{articulo.fechaUltModif}">
-                    <h:outputText value="#{Items.formatDate(articulo.fechaUltModif)}" />
-                </p:column>
-                <p:column headerText="Lotes" width="100px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.controlLotes}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Caduc." width="100px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.controlCaducidad}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Control Seriado" width="118px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.controlSeries}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Estado" width="220px" sortBy="#{articulo.estado}">
-                    <h:outputText value="#{articulo.estado}" />
-                </p:column>
-                <p:column headerText="B.V." width="50px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.bloqueoVentas}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Usuario Último Bloqueo Ventas" width="300px" sortBy="#{articulo.usuarioUltBloqueoVentas.nombreApellidos}">
-                    <h:outputText value="#{articulo.usuarioUltBloqueoVentas.username}" />
-                </p:column>
-                <p:column headerText="Fecha Último Bloqueo Ventas" width="300px" sortBy="#{articulo.fechaUltBloqueoVentas}">
-                    <h:outputText value="#{Items.formatDate(articulo.fechaUltBloqueoVentas)}" />
-                </p:column>
-                <p:column headerText="B.C." width="50px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.bloqueoCompras}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Grupo Art." width="100px" sortBy="#{articulo.articuloGrupo.etiquetaGrupo.descripcion}">
-                    <h:outputText value="#{articulo.articuloGrupo.etiquetaGrupo.descripcion}"/>
-                </p:column>
-                <p:column headerText="Tipo Picking" width="160px" style="text-align: right;">
-                    <h:outputText value="#{articulo.idTipoPicking}" />
-                </p:column>
-                <p:column headerText="Art. Clasificación" width="200px" sortBy="#{articulo.idArticuloClasificacion.descripcion}">
-                    <h:outputText value="#{articulo.idArticuloClasificacion.descripcion}" />
-                </p:column>
-                <p:column headerText="Clasificación" width="150px" style="text-align: right;">
-                    <h:outputText value="#{articulo.idClasificacion}" />
-                </p:column>
-                <p:column headerText="Con Etiquetas" width="104px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.etiqueta}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Etiq. Portuguesa" width="140px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.etiquetaProtuguesa}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Etiquetado Port." width="130px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.etiquetadoPortugues}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Etiq. Italiana" width="130px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.etiquetaItaliana}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Etiquetado Ita. " width="140px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.etiquetadoItaliano}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Etiq. Europea" width="130px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.etiquetaEuropea}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Propiedad de" width="220px" style="text-align: right;">
-                    <h:outputText value="#{articulo.idUsuarioCreacion}" />
-                </p:column>
-                <p:column headerText="Pndte. Verificar" width="130px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.pendienteVerificar}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Fecha Verificación" width="160px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.fechaUltimaVerificacion!=null}" disabled="true"/>
-                </p:column>
-                <p:column headerText="Altura (cm)" width="150px" style="text-align: right;">
-                    <h:outputText value="#{articulo.alto}">
-                        <f:convertNumber pattern="#,##0.00"/>
-                    </h:outputText>
-                </p:column>
-                <p:column headerText="Ancho (cm)" width="210px" style="text-align: right;">
-                    <h:outputText value="#{articulo.ancho}">
-                        <f:convertNumber pattern="#,##0.00"/>
-                    </h:outputText>
-                </p:column>
-                <p:column headerText="Largo (cm)" width="200px" style="text-align: right;">
-                    <h:outputText value="#{articulo.largo}">
-                        <f:convertNumber pattern="#,##0.00"/>
-                    </h:outputText>
-                </p:column>
-                <p:column headerText="Peso Neto (gr)" width="200px" style="text-align: right;">
-                    <h:outputText value="#{articulo.pesoNeto}">
-                        <f:convertNumber pattern="#,##0.00"/>
-                    </h:outputText>
-                </p:column>
-                <p:column headerText="Volumen Neto (cm3)" width="220px" style="text-align: right;">
-                    <h:outputText value="#{articulo.volumenNeto}">
-                        <f:convertNumber pattern="#,##0.00"/>
-                    </h:outputText>
-                </p:column>
-                <p:column headerText="Peso Bruto (gr)" width="200px" style="text-align: right;">
-                    <h:outputText value="#{articulo.pesoBruto}">
-                        <f:convertNumber pattern="#,##0.00"/>
-                    </h:outputText>
-                </p:column>
-                <p:column headerText="Volumen Bruto (cm3)" width="210px" style="text-align: right;">
-                    <h:outputText value="#{articulo.volumen}">
-                        <f:convertNumber pattern="#,##0.00"/>
-                    </h:outputText>
-                </p:column>
-                <p:column headerText="Preventa" width="180px" style="text-align: center;">
-                    <p:selectBooleanCheckbox value="#{articulo.preventa}" disabled="true"/>
-                </p:column>
-            </p:dataTable>
+            
+            <ui:include src="itemsTable.xhtml" />
 
         </h:form>
 

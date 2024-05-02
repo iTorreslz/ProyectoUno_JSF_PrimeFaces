@@ -21,6 +21,8 @@ import es.inerttia.ittws.controllers.entities.TipoArticulo;
 import es.inerttia.ittws.controllers.entities.TipoPicking;
 import es.inerttia.ittws.controllers.entities.custom.Articulo;
 import es.inerttia.ittwscomun.Configuracion;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,6 +32,16 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ViewScoped;
+import javax.faces.context.ExternalContext;
+import javax.faces.context.FacesContext;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.primefaces.PrimeFaces;
 import org.primefaces.event.SelectEvent;
 
@@ -49,6 +61,7 @@ public class Items {
 
     // ARTICULOS
     private List<Articulo> articulos;
+    private List<Articulo> filteredArticulos;
 
     // SELECTED
     private String terceroStringSelected;
@@ -198,9 +211,9 @@ public class Items {
             idStringMarcas = "(";
             for (int i = 0; i < marcasSelected.size(); i++) {
                 if (i != (marcasSelected.size() - 1)) {
-                    idStringMarcas += "'" + marcasSelected.get(i).getIdMarca()+ "',";
+                    idStringMarcas += "'" + marcasSelected.get(i).getIdMarca() + "',";
                 } else {
-                    idStringMarcas += "'" + marcasSelected.get(i).getIdMarca()+ "')";
+                    idStringMarcas += "'" + marcasSelected.get(i).getIdMarca() + "')";
                 }
             }
             return idStringMarcas;
@@ -214,9 +227,9 @@ public class Items {
             idStringNiveles = "(";
             for (int i = 0; i < nivelesSelected.size(); i++) {
                 if (i != (nivelesSelected.size() - 1)) {
-                    idStringNiveles += "'" + nivelesSelected.get(i).getIdNivelClasificacion()+ "',";
+                    idStringNiveles += "'" + nivelesSelected.get(i).getIdNivelClasificacion() + "',";
                 } else {
-                    idStringNiveles += "'" + nivelesSelected.get(i).getIdNivelClasificacion()+ "')";
+                    idStringNiveles += "'" + nivelesSelected.get(i).getIdNivelClasificacion() + "')";
                 }
             }
             return idStringNiveles;
@@ -308,6 +321,179 @@ public class Items {
         }
     }
 
+    // EXPORTA LOS PRODUCTOS QUE HAY EN LA TABLA EN ESE MOMENTO
+    public void exportarProductos() {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Artículos");
+
+            String[] headers = {"Artículo", "Referencia", "Descripción", "Código de barras", "Id Artículo Depósito", "Fecha de Alta", "Marca", "Familia",
+                "Fecha Ult. Modif.", "Lotes", "Caduc.", "Control Seriado", "Estado", "B.V.", "Usuario Último Bloqueo Ventas", "Fecha Último Bloqueo Ventas",
+                "B.C.", "Grupo Art.", "Tipo Picking", "Art. Clasificación", "Clasificación", "Con Etiquetas", "Etiq. Portuguesa", "Etiquetado Port.", "Etiq. Italiana",
+                "Etiquetado Ita.", "Etiq. Europea", "Propiedad de", "Pndte. Verificar", "Fecha Verificación", "Altura (cm)", "Ancho (cm)", "Largo (cm)", "Peso Neto (gr)",
+                "Volumen Neto (cm3)", "Peso Bruto (gr)", "Volumen Bruto (cm3)", "Preventa"};
+
+            XSSFCellStyle estiloCelda = workbook.createCellStyle();
+            XSSFColor gris = new XSSFColor(new java.awt.Color(223, 223, 223));
+            estiloCelda.setFillForegroundColor(gris);
+            estiloCelda.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            int rowNum = 1;
+            Row headerRow = sheet.createRow(0);
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(estiloCelda);
+            }
+
+            for (Articulo articulo : articulos) {
+                Row row = sheet.createRow(rowNum++);
+
+                for (int i = 0; i < headers.length; i++) {
+                    Cell cell = row.createCell(i);
+
+                    switch (i) {
+                        case 0:
+                            cell.setCellValue(articulo.getIdArticulo());
+                            break;
+                        case 1:
+                            cell.setCellValue(articulo.getReferencia());
+                            break;
+                        case 2:
+                            cell.setCellValue(articulo.getDescripcion());
+                            break;
+                        case 3:
+                            cell.setCellValue(articulo.getCodigoBarras());
+                            break;
+                        case 4:
+                            cell.setCellValue(articulo.getIdArticuloDeposito());
+                            break;
+                        case 5:;
+                            cell.setCellValue(formatDate(articulo.getFechaAlta()));
+                            break;
+                        case 6:
+                            cell.setCellValue(articulo.getIdMarca().getNombre());
+                            break;
+                        case 7:
+                            cell.setCellValue(articulo.getIdFamilia().getNombre());
+                            break;
+                        case 8:
+                            cell.setCellValue(formatDate(articulo.getFechaUltModif()));
+                            break;
+                        case 9:
+                            cell.setCellValue(articulo.isControlLotes() ? "sí" : "no");
+                            break;
+                        case 10:
+                            cell.setCellValue(articulo.isControlCaducidad() ? "sí" : "no");
+                            break;
+                        case 11:
+                            cell.setCellValue(articulo.isControlSeries() ? "sí" : "no");
+                            break;
+                        case 12:
+                            cell.setCellValue(articulo.getEstado());
+                            break;
+                        case 13:
+                            cell.setCellValue(articulo.isBloqueoVentas() ? "sí" : "no");
+                            break;
+                        case 14:
+                            cell.setCellValue(articulo.getUsuarioUltBloqueoVentas().getUsername());
+                            break;
+                        case 15:
+                            cell.setCellValue(formatDate(articulo.getFechaUltBloqueoVentas()));
+                            break;
+                        case 16:
+                            cell.setCellValue(articulo.isBloqueoCompras() ? "sí" : "no");
+                            break;
+                        case 17:
+                            cell.setCellValue(articulo.getArticuloGrupo().getEtiquetaGrupo().getDescripcion());
+                            break;
+                        case 18:
+                            cell.setCellValue(articulo.getIdTipoPicking());
+                            break;
+                        case 19:
+                            cell.setCellValue(articulo.getIdArticuloClasificacion().getDescripcion());
+                            break;
+                        case 20:
+                            cell.setCellValue(articulo.getIdClasificacion());
+                            break;
+                        case 21:
+                            cell.setCellValue(articulo.isEtiqueta() ? "sí" : "no");
+                            break;
+                        case 22:
+                            cell.setCellValue(articulo.isEtiquetaProtuguesa() ? "sí" : "no");
+                            break;
+                        case 23:
+                            cell.setCellValue(articulo.isEtiquetadoPortugues() ? "sí" : "no");
+                            break;
+                        case 24:
+                            cell.setCellValue(articulo.isEtiquetaItaliana() ? "sí" : "no");
+                            break;
+                        case 25:
+                            cell.setCellValue(articulo.isEtiquetadoItaliano() ? "sí" : "no");
+                            break;
+                        case 26:
+                            cell.setCellValue(articulo.isEtiquetaEuropea() ? "sí" : "no");
+                            break;
+                        case 27:
+                            cell.setCellValue(articulo.getIdUsuarioCreacion());
+                            break;
+                        case 28:
+                            cell.setCellValue(articulo.isPendienteVerificar() ? "sí" : "no");
+                            break;
+                        case 29:
+                            cell.setCellValue(articulo.getFechaUltimaVerificacion() != null ? "sí" : "no");
+                            break;
+                        case 30:
+                            cell.setCellValue(articulo.getAlto().doubleValue());
+                            break;
+                        case 31:
+                            cell.setCellValue(articulo.getAncho().doubleValue());
+                            break;
+                        case 32:
+                            cell.setCellValue(articulo.getLargo().doubleValue());
+                            break;
+                        case 33:
+                            cell.setCellValue(articulo.getPesoNeto().doubleValue());
+                            break;
+                        case 34:
+                            cell.setCellValue(articulo.getVolumenNeto().doubleValue());
+                            break;
+                        case 35:
+                            cell.setCellValue(articulo.getPesoBruto().doubleValue());
+                            break;
+                        case 36:
+                            cell.setCellValue(articulo.getVolumen().doubleValue());
+                            break;
+                        case 37:
+                            cell.setCellValue(articulo.isPreventa() ? "sí" : "no");
+                            break;
+                    }
+                }
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            byte[] content = out.toByteArray();
+
+            ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
+            HttpServletResponse response = (HttpServletResponse) externalContext.getResponse();
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment;filename=productos.xlsx");
+            response.setContentLength(content.length);
+
+            response.getOutputStream().write(content);
+
+            FacesContext.getCurrentInstance().responseComplete();
+
+        } catch (IOException e) {
+            System.out.println("Error");
+        }
+    }
+
     //------------------------------------------------------------------------//
     //                           GETTERS Y SETTERS                            //
     //------------------------------------------------------------------------//
@@ -326,6 +512,14 @@ public class Items {
 
     public void setArticulos(List<Articulo> articulos) {
         this.articulos = articulos;
+    }
+
+    public List<Articulo> getFilteredArticulos() {
+        return filteredArticulos;
+    }
+
+    public void setFilteredArticulos(List<Articulo> filteredArticulos) {
+        this.filteredArticulos = filteredArticulos;
     }
 
     public String getTerceroStringSelected() {
