@@ -1,0 +1,10 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="http://java.sun.com/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui"
+                >
+
+    <p:outputLabel rendered="true">
+        Total #{Items.articulos != null ? Items.articulos.size() : 0}
+    </p:outputLabel>
+
+</ui:composition>
